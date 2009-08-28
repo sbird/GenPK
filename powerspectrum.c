@@ -10,10 +10,14 @@
 //Little macro to work the storage order of the FFT.
 #define KVAL(n) ((n)<=dims/2 ? (n) : ((n)-dims))
 
-int powerspectrum(int dims, fftw_real *field, float *power, float *count,float *keffs)
+
+extern float invwindow(int kx, int ky, int kz, int n);
+
+int powerspectrum(int dims, fftw_real *field, float *power, float *count,float *keffs,int npart)
 {
 	fftwnd_plan pl;
-	fftw_complex *outfield= (fftw_complex *) field;
+	fftw_complex *outfield;
+	fftw_complex *temp;
 	float *powerpriv;
 	int *countpriv;
 	int dims2=dims*dims;
@@ -22,6 +26,7 @@ int powerspectrum(int dims, fftw_real *field, float *power, float *count,float *
 	int nrbins=floor(sqrt(3)*abs((dims+1.0)/2.0)+1);
 	int psindex;
 	outfield=malloc(dims*dims*dims*sizeof(fftw_complex));
+	temp=malloc(dims*dims*dims*sizeof(fftw_complex));
 	for(int i=0; i<dims3; i++)
 	{
 		outfield[i].re=field[i];
@@ -50,6 +55,7 @@ int powerspectrum(int dims, fftw_real *field, float *power, float *count,float *
 	for(int i=0; i<dims;i++)
 	{
 		int indx=i*dims2;
+/* 		printf("%d %e\n",KVAL(i),invwindow(KVAL(i),0,0,dims)); */
 		for(int j=0; j<dims; j++)
 		{
 			int indy=j*dims;
@@ -58,7 +64,10 @@ int powerspectrum(int dims, fftw_real *field, float *power, float *count,float *
 				int index=indx+indy+k;
 				float kk=sqrt(pow(KVAL(i),2)+pow(KVAL(j),2)+pow(KVAL(k),2));
 				psindex=kk;
-				power[psindex]+=pow(outfield[index].re,2)+pow(outfield[index].im,2);
+				//Correct for shot noise.
+				//Should really deconvolve the window function, but it is sufficiently like a delta that we don't bother.
+				//Better deconvolve.
+				power[psindex]+=(pow(outfield[index].re,2)+pow(outfield[index].im,2))*pow(invwindow(KVAL(i),KVAL(j),KVAL(k),dims),2)-1.0/npart;
 				count[psindex]++;
 				keffs[psindex]+=kk;
 			}
@@ -76,7 +85,7 @@ int powerspectrum(int dims, fftw_real *field, float *power, float *count,float *
 	free(outfield);
 	return nrbins;
 
-	//This doesn't work.
+//This doesn't work.
 #if 0
 #pragma omp parallel private(powerpriv,countpriv)
 {

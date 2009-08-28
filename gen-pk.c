@@ -7,18 +7,20 @@
  * out is an array of size [dims*dims*dims]*/
 int fieldize(float boxsize, int dims, float *out, int particles, float *positions);
 
+/* The window function associated with the above.*/
+float invwindow(int kx, int ky, int kz, int n);
 //Note we will need some contiguous memory space after the actual data in field.
 // The real input data has size
 // dims*dims*dims
 // The output has size dims*dims*(dims/2+1) *complex* values
 // So need 2*(dims*dims*dims+2) float space.
 // Need at least floor(sqrt(3)*abs((dims+1.0)/2.0)+1) values in power and count.
-int powerspectrum(int dims, fftw_real *field, float *power, float *count, float *keffs);
+int powerspectrum(int dims, fftw_real *field, float *power, float *count, float *keffs, int particles);
 
 #define FIELD_DIMS 256
 
 int main(char argc, char* argv[]){
-  int npart[5],nrbins;
+  int npart[5],nrbins=2*floor(sqrt(3)*abs((FIELD_DIMS+1.0)/2.0)+1);
   double massarr[5], time, redshift;
   float boxsize;
   float *pos, *power, *count, *keffs;
@@ -56,15 +58,15 @@ int main(char argc, char* argv[]){
   fclose(fd);
   fieldize(boxsize,FIELD_DIMS,field,npart[1],pos);
   free(pos);
-  power=malloc(floor(sqrt(3)*abs((FIELD_DIMS+1.0)/2.0)+1)*sizeof(float));
-  count=malloc(floor(sqrt(3)*abs((FIELD_DIMS+1.0)/2.0)+1)*sizeof(float));
-  keffs=malloc(floor(sqrt(3)*abs((FIELD_DIMS+1.0)/2.0)+1)*sizeof(float));
+  power=malloc(nrbins*sizeof(float));
+  count=malloc(nrbins*sizeof(float));
+  keffs=malloc(nrbins*sizeof(float));
   if(!power | !count)
   {
 		fprintf(stderr,"Error allocating memory for power spectrum.\n");
 		exit(1);
   }
-  nrbins=powerspectrum(FIELD_DIMS,(fftw_real *)field,power,count,keffs);
+  nrbins=powerspectrum(FIELD_DIMS,(fftw_real *)field,power,count,keffs,npart[1]);
   free(field);
  for(int i=0;i<nrbins;i++)
  {

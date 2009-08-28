@@ -1,4 +1,4 @@
-CC=gcc -O2 -g -c -std=c99
+CC=gcc -O2 -g -c -std=gnu99
 LINK=gcc -lm -lsrfftw_threads -lsfftw_threads -lsrfftw -lsfftw -lpthread -L/data/store/spb41/apps/fftw/lib 
 
 .PHONY:all love clean
