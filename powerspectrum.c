@@ -55,7 +55,6 @@ int powerspectrum(int dims, fftw_real *field, float *power, float *count,float *
 	for(int i=0; i<dims;i++)
 	{
 		int indx=i*dims2;
-/* 		printf("%d %e\n",KVAL(i),invwindow(KVAL(i),0,0,dims)); */
 		for(int j=0; j<dims; j++)
 		{
 			int indy=j*dims;
@@ -63,26 +62,37 @@ int powerspectrum(int dims, fftw_real *field, float *power, float *count,float *
 			{
 				int index=indx+indy+k;
 				float kk=sqrt(pow(KVAL(i),2)+pow(KVAL(j),2)+pow(KVAL(k),2));
-				psindex=kk;
+				psindex=floor(kk);
+/* 				if(psindex < 2) */
+/* 						  printf("%e %d %d %d\n",kk,KVAL(i),KVAL(j),KVAL(k)); */
 				//Correct for shot noise.
 				//Should really deconvolve the window function, but it is sufficiently like a delta that we don't bother.
-				//Better deconvolve.
-				power[psindex]+=(pow(outfield[index].re,2)+pow(outfield[index].im,2))*pow(invwindow(KVAL(i),KVAL(j),KVAL(k),dims),2)-1.0/npart;
+/* 		printf("%d %d %d %e %e\n",KVAL(i),KVAL(j),KVAL(k),kk,invwindow(KVAL(i),KVAL(j),KVAL(k),dims)); */
+				power[psindex]+=(pow(outfield[index].re,2)+pow(outfield[index].im,2));
+						  //*pow(invwindow(KVAL(i),KVAL(j),KVAL(k),dims),2)-1.0/npart;				
 				count[psindex]++;
-				keffs[psindex]+=kk;
+/* 				keffs[psindex]+=kk; */
 			}
 		}
 	}
 	for(int i=0; i< nrbins;i++)
 	{
 		power[i]/=pow(dims3,2);
+		//bin center (k) is i+0.5.
+		//a is bin width/2, is 0.5
+		//k_eff is k+ 2a^2k/(a^2+3k^2)
+		keffs[i]=(i+0.5)+0.5*(i+0.5)/(0.25+3*pow((i+0.5),2));
 		if(count[i]){
 			power[i]/=count[i];
-			keffs[i]/=count[i];
+/* 			float t=(float)i/sqrt(3); */
+/* 			power[i]*=pow(invwindow(t,t,t,dims),2); */
+/* 			power[i]/=pow(1-pow(M_PI*keffs[i]/dims,2)/3.0,2); */
+/* 			keffs[i]/=count[i]; */
 		}
 	}
 	fftwnd_destroy_plan(pl);
 	free(outfield);
+/* 	return 0; */
 	return nrbins;
 
 //This doesn't work.

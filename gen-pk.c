@@ -17,7 +17,7 @@ float invwindow(int kx, int ky, int kz, int n);
 // Need at least floor(sqrt(3)*abs((dims+1.0)/2.0)+1) values in power and count.
 int powerspectrum(int dims, fftw_real *field, float *power, float *count, float *keffs, int particles);
 
-#define FIELD_DIMS 256
+#define FIELD_DIMS 128
 
 int main(char argc, char* argv[]){
   int npart[5],nrbins=2*floor(sqrt(3)*abs((FIELD_DIMS+1.0)/2.0)+1);
@@ -70,7 +70,7 @@ int main(char argc, char* argv[]){
   free(field);
  for(int i=0;i<nrbins;i++)
  {
-	printf("%e\t%e\t%e\n",keffs[i],power[i],count[i]);
+	printf("%e\t%e\t%e\t%e\n",i+0.5,keffs[i],power[i],count[i]);
  }
 	free(power);
 	free(count);

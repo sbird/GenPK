@@ -66,7 +66,7 @@ float invwindow(int kx, int ky, int kz, int n)
 		iwx=1.0;
 	else
 		iwx=M_PI*kx/(n*sin(M_PI*kx/(float)n));
-	if(ky==0)
+	if(!ky)
 		iwy=1.0;
 	else
 		iwy=M_PI*ky/(n*sin(M_PI*ky/(float)n));
