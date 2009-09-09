@@ -17,6 +17,8 @@ int fieldize(double boxsize, int dims, float *out, int particles, float *positio
 	float units=dims/boxsize;
 	float max=0;
 	/* This is one over density.*/
+#pragma omp parallel
+	{
 	for(int i=0; i<dims3; i++)
 		out[i]=-1;
 	for(int index=0;index<particles;index++)
@@ -40,6 +42,7 @@ int fieldize(double boxsize, int dims, float *out, int particles, float *positio
 		out[dims2*nex[0]+dims*fx[1] +nex[2]]+=invrho*dx[0]*tx[1]*dx[2];
 		out[dims2*fx[0] +dims*nex[1]+nex[2]]+=invrho*tx[0]*dx[1]*dx[2];
 		out[dims2*nex[0]+dims*nex[1]+nex[2]]+=invrho*dx[0]*dx[1]*dx[2];
+	}
 	}
 	return 0;
 }

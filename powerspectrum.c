@@ -69,7 +69,7 @@ int powerspectrum(int dims, fftw_real *field, int nrbins, float *power, float *c
 /* 				if(psindex < 2) */
 /* 						  printf("%e %d %d %d\n",kk,KVAL(i),KVAL(j),KVAL(k)); */
 				//Correct for shot noise.
-				power[psindex]+=pow(2*M_PI,3)*(pow(outfield[index].re,2)+pow(outfield[index].im,2))/pow(dims3,2);//*pow(invwindow(KVAL(i),KVAL(j),KVAL(k),dims),2)-1.0/(double)npart;
+				power[psindex]+=(pow(outfield[index].re,2)+pow(outfield[index].im,2))/pow(dims3,2)*pow(invwindow(KVAL(i),KVAL(j),KVAL(k),dims),2);//-1.0/(double)npart);
 				count[psindex]++;
 			}
 		}

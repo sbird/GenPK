@@ -1,5 +1,6 @@
 PRO=-pg
-CC=gcc -O2 -g -c -std=gnu99 -DOLD_FORMAT $(PRO)
+CC=gcc -O2 -g -c -std=gnu99 $(PRO)
+#-DOLD_FORMAT
 LINK=gcc -lm -lsrfftw_threads -lsfftw_threads -lsrfftw -lsfftw -lpthread -L/data/store/spb41/apps/fftw/lib $(PRO)
 .PHONY:all love clean
 all:gen-pk
