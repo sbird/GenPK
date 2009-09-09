@@ -46,7 +46,7 @@ size_t my_fread(void *ptr, size_t size, size_t nmemb, FILE * stream)
 
   if((nread = fread(ptr, size, nmemb, stream)) != nmemb)
     {
-      printf("I/O error (fread) !\n");
+      fprintf(stderr, "I/O error (fread) !\n");
       exit(3);
     }
   return nread;

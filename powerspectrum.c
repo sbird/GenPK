@@ -68,8 +68,10 @@ int powerspectrum(int dims, fftw_real *field, int nrbins, float *power, float *c
 				psindex=floor(binsperunit*kk);
 /* 				if(psindex < 2) */
 /* 						  printf("%e %d %d %d\n",kk,KVAL(i),KVAL(j),KVAL(k)); */
-				//Correct for shot noise.
-				power[psindex]+=(pow(outfield[index].re,2)+pow(outfield[index].im,2))/pow(dims3,2)*pow(invwindow(KVAL(i),KVAL(j),KVAL(k),dims),2);//-1.0/(double)npart);
+				//Correct for shot noise and window function in IDL. 
+				//See my notes for the reason why.
+				power[psindex]+=pow(outfield[index].re,2)+pow(outfield[index].im,2);
+						  //*pow(invwindow(KVAL(i),KVAL(j),KVAL(k),dims),2);
 				count[psindex]++;
 			}
 		}
@@ -85,6 +87,9 @@ int powerspectrum(int dims, fftw_real *field, int nrbins, float *power, float *c
 		{
 			float k=i*2.0*bwth;
 			keffs[i]=(k+bwth)+2*pow(bwth,2)*(k+bwth)/(pow(bwth,2)+3*pow((k+bwth),2));
+			//I do the division twice to avoid any overflow.
+			power[i]/=dims3;
+			power[i]/=dims3;
 			power[i]/=count[i];
 		}
 	}

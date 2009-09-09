@@ -8,22 +8,22 @@
 
 int fieldize(double boxsize, int dims, float *out, int particles, float *positions)
 {
-	int dims3=pow(dims,3);
-	int dims2=pow(dims,2);
-	float invrho=dims3/(float)particles;
-	int fx[3],nex[3],i,index;
-	float dx[3],tx[3];
-	float x[3];
-	float units=dims/boxsize;
-	float max=0;
+	const int dims3=pow(dims,3);
+	const int dims2=pow(dims,2);
+	const float invrho=dims3/(float)particles;
+	const float units=dims/boxsize;
 	/* This is one over density.*/
 #pragma omp parallel
 	{
+	#pragma omp for schedule(static)
 	for(int i=0; i<dims3; i++)
 		out[i]=-1;
+	#pragma omp for schedule(static) nowait
 	for(int index=0;index<particles;index++)
 	{
-		for(i=0; i<3; i++)
+		float dx[3],tx[3], x[3];
+		int fx[3],nex[3];
+		for(int i=0; i<3; i++)
 		{
 			x[i]=positions[3*index+i]*units;	
 			fx[i]=floor(x[i]);
@@ -34,6 +34,8 @@ int fieldize(double boxsize, int dims, float *out, int particles, float *positio
 		}
 		//The store operation may only be done by one thread at a time, 
 		//to ensure synchronisation.
+		#pragma omp critical 
+		{
 		out[dims2*fx[0] +dims*fx[1] +fx[2]]	+=invrho*tx[0]*tx[1]*tx[2];
 		out[dims2*nex[0]+dims*fx[1] +fx[2]]	+=invrho*dx[0]*tx[1]*tx[2];
 		out[dims2*fx[0] +dims*nex[1]+fx[2]]	+=invrho*tx[0]*dx[1]*tx[2];
@@ -42,6 +44,7 @@ int fieldize(double boxsize, int dims, float *out, int particles, float *positio
 		out[dims2*nex[0]+dims*fx[1] +nex[2]]+=invrho*dx[0]*tx[1]*dx[2];
 		out[dims2*fx[0] +dims*nex[1]+nex[2]]+=invrho*tx[0]*dx[1]*dx[2];
 		out[dims2*nex[0]+dims*nex[1]+nex[2]]+=invrho*dx[0]*dx[1]*dx[2];
+		}
 	}
 	}
 	return 0;
