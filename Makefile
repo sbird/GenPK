@@ -1,9 +1,8 @@
-CC=gcc -O2 -g -c -std=gnu99
-LINK=gcc -lm -lsrfftw_threads -lsfftw_threads -lsrfftw -lsfftw -lpthread -L/data/store/spb41/apps/fftw/lib 
-
+PRO=-pg
+CC=gcc -O2 -g -c -std=gnu99 -DOLD_FORMAT $(PRO)
+LINK=gcc -lm -lsrfftw_threads -lsfftw_threads -lsrfftw -lsfftw -lpthread -L/data/store/spb41/apps/fftw/lib $(PRO)
 .PHONY:all love clean
 all:gen-pk
-
 gen-pk:powerspectrum.o fieldize.o readgadget.o gen-pk.c
 	${CC} gen-pk.c
 	${LINK} fieldize.o powerspectrum.o readgadget.o gen-pk.o -o gen-pk

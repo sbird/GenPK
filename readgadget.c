@@ -4,6 +4,26 @@
 
 #include "readgadget.h"
 #define int4bytes int
+
+struct io_header_1
+{
+  int      npart[6];
+  double   mass[6];
+  double   time;
+  double   redshift;
+  int      flag_sfr;
+  int      flag_feedback;
+  int      npartTotal[6];
+  int      flag_cooling;
+  int      numfiles;
+  double   BoxSize;
+  double   Omega0;
+  double   OmegaLambda;
+  double   HubbleParam;
+  char     fill[256- 6*4- 6*8- 2*8- 2*4- 6*4- 2*4 - 4*8];  /* fills to 256 Bytes
+ */
+} header;
+
 /*--------- comment/uncomment to remove/enable DEBUG outputs ------------------*/
 /*
 #define MY_DEBUG
@@ -16,6 +36,7 @@
 /*-----------------------------------------------------------------------------*/
 
 int4bytes blksize,swap=0;
+int nparticles=0;
 #define SKIP  {my_fread(&blksize,sizeof(int),1,fd); swap_Nbyte((char*)&blksize,1,4);}
 
 /*---------------------- Basic routine to read data from a file ---------------*/
@@ -122,11 +143,15 @@ int find_block(FILE *fd,char *label)
 /*-------- FILE *fd:      File handle -----------------------------------------*/
 /*-------- returns number of read bytes ---------------------------------------*/
 /*-----------------------------------------------------------------------------*/
-int read_gadget_head(int *npart,double *massarr,double *time,double *redshift,FILE *fd)
+int read_gadget_head(int *npart,double *massarr,double *time,double *redshift,double *boxsize, FILE *fd)
 {
   int blocksize,dummysize,i;
-
+#ifndef OLD_FORMAT
   blocksize = find_block(fd,"HEAD");
+#else 
+  blocksize=sizeof(header);
+  blksize=8;
+#endif
   if(blocksize <= 0)
     {
       printf("Block <%s> not fond !\n","HEAD");
@@ -134,16 +159,29 @@ int read_gadget_head(int *npart,double *massarr,double *time,double *redshift,FI
     }
   else
     {
-       dummysize=blocksize - 6 * sizeof(int) - 8 * sizeof(double);
+				SKIP;
+		 my_fread(&header, sizeof(header), 1, fd);
+	#ifdef MY_DEBUG
+		 fprintf(stderr, "npart=%d %d %d %d %d %d\n", header.npart[0],header.npart[1],header.npart[2],header.npart[3], header.npart[4], header.npart[5]);
+		 fprintf(stderr, "header.mass=%d %d %d %d %d %d\n", header.mass[0],header.mass[1],header.mass[2],header.mass[3], header.mass[4], header.mass[5]);
+		 fprintf(stderr, "time=%e\n",header.time);
+		 fprintf(stderr, "redshift=%e\n",header.redshift);
+		 fprintf(stderr, "flag_sfr=%d\n",header.flag_sfr);
+		 fprintf(stderr, "flag_feedback=%d\n",header.flag_feedback);
+		 fprintf(stderr, "header.npartTotal=%d %d %d %d %d %d\n", header.npartTotal[0],header.npartTotal[1],header.npartTotal[2],header.npartTotal[3], header.npartTotal[4], header.npartTotal[5]);
+		 fprintf(stderr, "flag_cooling=%d\n",header.flag_cooling);
+		 fprintf(stderr, "numfiles=%d\n",header.numfiles);
+		 fprintf(stderr, "boxsize=%e\n",header.BoxSize);
+	#endif
        SKIP;
-       my_fread(npart,6*sizeof(int), 1, fd);        swap_Nbyte((char*)npart,6,4);
-       my_fread(massarr,6*sizeof(double), 1, fd);   swap_Nbyte((char*)massarr,6,8);
-       my_fread(time,sizeof(double), 1, fd);        swap_Nbyte((char*)time,1,8);
-       my_fread(redshift,sizeof(double), 1, fd);    swap_Nbyte((char*)redshift,1,8);
-		 //flag_sfr,flag_feedback,partTotal, $
-         //                flag_cooling,num_files,BoxSize,Omega0,OmegaLambda,HubbleParam
-       fseek(fd,dummysize,1);
-       SKIP;
+		 *time=header.time;
+		 *redshift=header.redshift;
+		 *boxsize=header.BoxSize;
+		 for(i=0;i<6;i++)
+		 {
+			npart[i]=header.npart[i];
+			massarr[i]=header.mass[i];
+		 }
     }
   return(blocksize);
 }
@@ -158,11 +196,10 @@ int read_gadget_head(int *npart,double *massarr,double *time,double *redshift,FI
 int read_gadget_float(float *data,char *label,FILE *fd)
 {
   int blocksize;
-
   blocksize = find_block(fd,label);
   if(blocksize <= 0)
     {
-      printf("Block <%s> not fond !\n",label);
+      printf("Block <%s> not found !\n",label);
       exit(5);
     }
   else
@@ -189,7 +226,11 @@ int read_gadget_float3(float *data,char *label,FILE *fd)
 {
   int blocksize,i;
 
+#ifndef OLD_FORMAT
   blocksize = find_block(fd,label);
+#else
+	blocksize=3*header.npart[1]*sizeof(float);
+#endif
   if(blocksize <= 0)
     {
       printf("Block <%s> not fond !\n",label);
@@ -203,11 +244,14 @@ int read_gadget_float3(float *data,char *label,FILE *fd)
        SKIP;
        my_fread(data,blocksize, 1, fd);
        swap_Nbyte((char*)data,blocksize/sizeof(float),4);
+#ifdef MY_DEBUG
+		 fprintf(stderr, "first particles at: %e %e %e\n",data[0],data[1],data[2]);
+		 fprintf(stderr, "last particles at: %e %e %e\n",data[header.npart[1]-3],data[header.npart[1]-2],data[header.npart[1]-1]);
+#endif
        SKIP;
     }
   return(blocksize/sizeof(float)/3);
 }
-
 
 /*-----------------------------------------------------------------------------*/
 /*-----------------------------------------------------------------------------*/

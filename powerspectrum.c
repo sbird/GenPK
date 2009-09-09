@@ -13,7 +13,7 @@
 
 extern float invwindow(int kx, int ky, int kz, int n);
 
-int powerspectrum(int dims, fftw_real *field, float *power, float *count,float *keffs,int npart)
+int powerspectrum(int dims, fftw_real *field, int nrbins, float *power, float *count,float *keffs,int npart)
 {
 	fftwnd_plan pl;
 	fftw_complex *outfield;
@@ -22,8 +22,10 @@ int powerspectrum(int dims, fftw_real *field, float *power, float *count,float *
 	int *countpriv;
 	int dims2=dims*dims;
 	int dims3=dims2*dims;
-	int dims6=dims3*dims3;
-	int nrbins=floor(sqrt(3)*abs((dims+1.0)/2.0)+1);
+	//How many bins per unit interval in k?
+	int binsperunit=nrbins/(floor(sqrt(3)*abs((dims+1.0)/2.0)+1));
+	//Half the bin width
+	float bwth=1.0/(2.0*binsperunit);
 	int psindex;
 	outfield=malloc(dims*dims*dims*sizeof(fftw_complex));
 	temp=malloc(dims*dims*dims*sizeof(fftw_complex));
@@ -52,6 +54,7 @@ int powerspectrum(int dims, fftw_real *field, float *power, float *count,float *
 	}
 	//Want P(k)= F(k).re*F(k).re+F(k).im*F(k).im
 	//Use the symmetry of the real fourier transform to half the final dimension.
+/* 	printf("npart=%d, cube root of npart=%d\n",npart,(int)cbrt(npart)); */
 	for(int i=0; i<dims;i++)
 	{
 		int indx=i*dims2;
@@ -62,32 +65,27 @@ int powerspectrum(int dims, fftw_real *field, float *power, float *count,float *
 			{
 				int index=indx+indy+k;
 				float kk=sqrt(pow(KVAL(i),2)+pow(KVAL(j),2)+pow(KVAL(k),2));
-				psindex=floor(kk);
+				psindex=floor(binsperunit*kk);
 /* 				if(psindex < 2) */
 /* 						  printf("%e %d %d %d\n",kk,KVAL(i),KVAL(j),KVAL(k)); */
 				//Correct for shot noise.
-				//Should really deconvolve the window function, but it is sufficiently like a delta that we don't bother.
-/* 		printf("%d %d %d %e %e\n",KVAL(i),KVAL(j),KVAL(k),kk,invwindow(KVAL(i),KVAL(j),KVAL(k),dims)); */
-				power[psindex]+=(pow(outfield[index].re,2)+pow(outfield[index].im,2));
-						  //*pow(invwindow(KVAL(i),KVAL(j),KVAL(k),dims),2)-1.0/npart;				
+				power[psindex]+=pow(2*M_PI,3)*(pow(outfield[index].re,2)+pow(outfield[index].im,2))/pow(dims3,2);//*pow(invwindow(KVAL(i),KVAL(j),KVAL(k),dims),2)-1.0/(double)npart;
 				count[psindex]++;
-/* 				keffs[psindex]+=kk; */
 			}
 		}
 	}
 	for(int i=0; i< nrbins;i++)
 	{
-		power[i]/=pow(dims3,2);
-		//bin center (k) is i+0.5.
+		
+/* 	power[i]/=pow(dims3,2); */
+		//bin center (k) is i+a.
 		//a is bin width/2, is 0.5
 		//k_eff is k+ 2a^2k/(a^2+3k^2)
-		keffs[i]=(i+0.5)+0.5*(i+0.5)/(0.25+3*pow((i+0.5),2));
-		if(count[i]){
+		if(count[i])
+		{
+			float k=i*2.0*bwth;
+			keffs[i]=(k+bwth)+2*pow(bwth,2)*(k+bwth)/(pow(bwth,2)+3*pow((k+bwth),2));
 			power[i]/=count[i];
-/* 			float t=(float)i/sqrt(3); */
-/* 			power[i]*=pow(invwindow(t,t,t,dims),2); */
-/* 			power[i]/=pow(1-pow(M_PI*keffs[i]/dims,2)/3.0,2); */
-/* 			keffs[i]/=count[i]; */
 		}
 	}
 	fftwnd_destroy_plan(pl);
