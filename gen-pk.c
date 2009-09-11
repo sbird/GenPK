@@ -17,10 +17,11 @@ float invwindow(int kx, int ky, int kz, int n);
 // Need at least floor(sqrt(3)*abs((dims+1.0)/2.0)+1) values in power and count.
 int powerspectrum(int dims, fftw_real *field, int nrbins, float *power, float *count, float *keffs, int particles);
 
-#define FIELD_DIMS 512
+#define FIELD_DIMS 768
 
 int main(char argc, char* argv[]){
-  int npart[5],nrbins=floor(sqrt(3)*abs((FIELD_DIMS+1.0)/2.0)+1);
+  int field_dims;
+  int npart[5],nrbins;
   double massarr[5], time, redshift;
   double boxsize;
   float *pos, *power, *count, *keffs;
@@ -41,9 +42,11 @@ int main(char argc, char* argv[]){
 		fprintf(stderr,"Error reading file header!\n");
 		exit(1);
   }
+  field_dims=(2*cbrt(npart[1]) < FIELD_DIMS ? 2*cbrt(npart[1]) : FIELD_DIMS);
+  nrbins=floor(sqrt(3)*abs((field_dims+1.0)/2.0)+1);
   pos=malloc(3*(npart[1]+1)*sizeof(float));
-  field=malloc((FIELD_DIMS*FIELD_DIMS*FIELD_DIMS+2)*sizeof(float));
-  if(!pos | !field)
+  field=malloc((field_dims*field_dims*field_dims+2)*sizeof(float));
+  if(!pos || !field)
   {
 		fprintf(stderr,"Error allocating particle memory\n");
 		exit(1);
@@ -55,17 +58,17 @@ int main(char argc, char* argv[]){
   }
   //By now we should have the data.
   fclose(fd);
-  fieldize(boxsize,FIELD_DIMS,field,npart[1],pos);
+  fieldize(boxsize,field_dims,field,npart[1],pos);
   free(pos);
   power=malloc(nrbins*sizeof(float));
   count=malloc(nrbins*sizeof(float));
   keffs=malloc(nrbins*sizeof(float));
-  if(!power | !count)
+  if(!power || !count || !keffs)
   {
 		fprintf(stderr,"Error allocating memory for power spectrum.\n");
 		exit(1);
   }
-  nrbins=powerspectrum(FIELD_DIMS,(fftw_real *)field,nrbins, power,count,keffs,npart[1]);
+  nrbins=powerspectrum(field_dims,(fftw_real *)field,nrbins, power,count,keffs,npart[1]);
   free(field);
  for(int i=0;i<nrbins;i++)
  {

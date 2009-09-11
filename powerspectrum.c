@@ -17,7 +17,6 @@ int powerspectrum(int dims, fftw_real *field, int nrbins, float *power, float *c
 {
 	fftwnd_plan pl;
 	fftw_complex *outfield;
-	fftw_complex *temp;
 	float *powerpriv;
 	int *countpriv;
 	int dims2=dims*dims;
@@ -27,8 +26,12 @@ int powerspectrum(int dims, fftw_real *field, int nrbins, float *power, float *c
 	//Half the bin width
 	float bwth=1.0/(2.0*binsperunit);
 	int psindex;
+	//Need to dispense with this memory by, eg, re-using field.
 	outfield=malloc(dims*dims*dims*sizeof(fftw_complex));
-	temp=malloc(dims*dims*dims*sizeof(fftw_complex));
+	if(!outfield){
+			  fprintf(stderr, "Error allocating memory for outfield!\n");
+			  exit(1);
+	}
 	for(int i=0; i<dims3; i++)
 	{
 		outfield[i].re=field[i];
