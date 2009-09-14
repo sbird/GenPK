@@ -1,23 +1,14 @@
-#include <math.h>
-#include <stdio.h>
-#include "readgadget.h"
-#include <sfftw.h>
+#include "gen-pk.h"
 /* Fieldize. positions should be an array of size 3*particles 
  * (like the output of read_gadget_float3)
  * out is an array of size [dims*dims*dims]*/
-int fieldize(double boxsize, int dims, float *out, int particles, float *positions);
+/* the "extra" switch, if set to one, will assume that the output 
+ * is about to be handed to an FFTW in-place routine, 
+ * and set skip the last 2 places of the each row in the last dimension
+ */
 
-/* The window function associated with the above.*/
-float invwindow(int kx, int ky, int kz, int n);
-//Note we will need some contiguous memory space after the actual data in field.
-// The real input data has size
-// dims*dims*dims
-// The output has size dims*dims*(dims/2+1) *complex* values
-// So need 2*(dims*dims*dims+2) float space.
-// Need at least floor(sqrt(3)*abs((dims+1.0)/2.0)+1) values in power and count.
-int powerspectrum(int dims, fftw_real *field, int nrbins, float *power, float *count, float *keffs, int particles);
-
-#define FIELD_DIMS 768
+/* In practice this means we need just over 4GB, as sizeof(float)=4*/
+#define FIELD_DIMS 1024
 
 int main(char argc, char* argv[]){
   int field_dims;
@@ -45,7 +36,8 @@ int main(char argc, char* argv[]){
   field_dims=(2*cbrt(npart[1]) < FIELD_DIMS ? 2*cbrt(npart[1]) : FIELD_DIMS);
   nrbins=floor(sqrt(3)*abs((field_dims+1.0)/2.0)+1);
   pos=malloc(3*(npart[1]+1)*sizeof(float));
-  field=malloc((field_dims*field_dims*field_dims+2)*sizeof(float));
+  /* Allocating a bit more memory allows us to do in-place transforms.*/
+  field=malloc(2*field_dims*field_dims*(field_dims/2+1)*sizeof(float));
   if(!pos || !field)
   {
 		fprintf(stderr,"Error allocating particle memory\n");
@@ -58,7 +50,7 @@ int main(char argc, char* argv[]){
   }
   //By now we should have the data.
   fclose(fd);
-  fieldize(boxsize,field_dims,field,npart[1],pos);
+  fieldize(boxsize,field_dims,field,npart[1],pos, 1);
   free(pos);
   power=malloc(nrbins*sizeof(float));
   count=malloc(nrbins*sizeof(float));
@@ -68,7 +60,7 @@ int main(char argc, char* argv[]){
 		fprintf(stderr,"Error allocating memory for power spectrum.\n");
 		exit(1);
   }
-  nrbins=powerspectrum(field_dims,(fftw_real *)field,nrbins, power,count,keffs,npart[1]);
+  nrbins=powerspectrum(field_dims,field,nrbins, power,count,keffs,npart[1]);
   free(field);
  for(int i=0;i<nrbins;i++)
  {

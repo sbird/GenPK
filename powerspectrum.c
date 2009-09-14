@@ -1,19 +1,16 @@
-#include <srfftw.h>
-#include <srfftw_threads.h>
-#include <math.h>
-//Note we will need some contiguous memory space after the actual data in field.
-// The real input data has size
-// dims*dims*dims
-// The output has size dims*dims*(dims/2+1) *complex* values
-// So need dims*dims*dims+2 float space.
+#include "gen-pk.h"
 
-//Little macro to work the storage order of the FFT.
+/*Note we need some contiguous memory space after the actual data in field. *The real input data has size
+ *dims*dims*dims
+ *The output has size dims*dims*(dims/2+1) *complex* values
+ * So need dims*dims*dims+2 float space.
+ * Also the field needs to be stored carefully to make the 
+ * extra space be in the right place. */
+
+/*Little macro to work the storage order of the FFT.*/
 #define KVAL(n) ((n)<=dims/2 ? (n) : ((n)-dims))
 
-
-extern float invwindow(int kx, int ky, int kz, int n);
-
-int powerspectrum(int dims, fftw_real *field, int nrbins, float *power, float *count,float *keffs,int npart)
+int powerspectrum(int dims, float *field, int nrbins, float *power, float *count,float *keffs,int npart)
 {
 	fftwnd_plan pl;
 	fftw_complex *outfield;
@@ -26,15 +23,14 @@ int powerspectrum(int dims, fftw_real *field, int nrbins, float *power, float *c
 	/*Half the bin width*/
 	float bwth=1.0/(2.0*binsperunit);
 	int psindex;
-	int totalpts=dims*dims*(dims/2+1)*sizeof(fftw_real);
 	if(sizeof(fftw_real) != sizeof(float))
 	{
 		fprintf(stderr, "sizeof fftw_real:%d fftw_complex: %d, float: %d\n",sizeof(fftw_real), sizeof(fftw_complex), sizeof(float));
 		fprintf(stderr, "fftw_real is not a float. Perhaps you linked the wrong library?\n");
 		exit(1);
 	}
-	//Need to dispense with this memory by, eg, re-using field.
-	outfield=malloc(2*dims*dims*(dims/2+1)*sizeof(fftw_real));
+/* 	outfield=malloc(2*dims*dims*(dims/2+1)*sizeof(fftw_real)); */
+	outfield=(fftw_complex *) &field[0];
 	if(!outfield){
 			  fprintf(stderr, "Error allocating memory for outfield!\n");
 			  exit(1);
@@ -44,12 +40,12 @@ int powerspectrum(int dims, fftw_real *field, int nrbins, float *power, float *c
 			  fprintf(stderr,"Error initialising fftw threads\n");
 			  exit(1);
 	}
-	pl=rfftw3d_create_plan(dims,dims,dims,FFTW_REAL_TO_COMPLEX, FFTW_ESTIMATE);
-	rfftwnd_threads_one_real_to_complex(4,pl, field, outfield);
+	pl=rfftw3d_create_plan(dims,dims,dims,FFTW_REAL_TO_COMPLEX, FFTW_ESTIMATE | FFTW_IN_PLACE);
+/* 	pl=rfftw3d_create_plan(dims,dims,dims,FFTW_REAL_TO_COMPLEX, FFTW_ESTIMATE); */
+	rfftwnd_threads_one_real_to_complex(4,pl, &field[0], outfield);
 	/* Now we compute the powerspectrum in each direction.
 	 * FFTW is unnormalised, so we need to scale by the length of the array
 	 * (we do this later). */
-	/*We could possibly dispense with some of this memory by reusing outfield, but hey.*/
 	for(int i=0; i< nrbins; i++)
 	{
 		power[i]=0;
@@ -109,7 +105,7 @@ int powerspectrum(int dims, fftw_real *field, int nrbins, float *power, float *c
 		}
 	}
 	fftwnd_destroy_plan(pl);
-	free(outfield);
+/* 	free(outfield); */
 /* 	return 0; */
 	return nrbins;
 }
