@@ -1,5 +1,5 @@
-#include <sfftw.h>
-#include <sfftw_threads.h>
+#include <srfftw.h>
+#include <srfftw_threads.h>
 #include <math.h>
 //Note we will need some contiguous memory space after the actual data in field.
 // The real input data has size
@@ -21,76 +21,88 @@ int powerspectrum(int dims, fftw_real *field, int nrbins, float *power, float *c
 	int *countpriv;
 	int dims2=dims*dims;
 	int dims3=dims2*dims;
-	//How many bins per unit interval in k?
+	/*How many bins per unit interval in k?*/
 	int binsperunit=nrbins/(floor(sqrt(3)*abs((dims+1.0)/2.0)+1));
-	//Half the bin width
+	/*Half the bin width*/
 	float bwth=1.0/(2.0*binsperunit);
 	int psindex;
+	int totalpts=dims*dims*(dims/2+1)*sizeof(fftw_real);
+	if(sizeof(fftw_real) != sizeof(float))
+	{
+		fprintf(stderr, "sizeof fftw_real:%d fftw_complex: %d, float: %d\n",sizeof(fftw_real), sizeof(fftw_complex), sizeof(float));
+		fprintf(stderr, "fftw_real is not a float. Perhaps you linked the wrong library?\n");
+		exit(1);
+	}
 	//Need to dispense with this memory by, eg, re-using field.
-	outfield=malloc(dims*dims*dims*sizeof(fftw_complex));
+	outfield=malloc(2*dims*dims*(dims/2+1)*sizeof(fftw_real));
 	if(!outfield){
 			  fprintf(stderr, "Error allocating memory for outfield!\n");
 			  exit(1);
-	}
-	for(int i=0; i<dims3; i++)
-	{
-		outfield[i].re=field[i];
-		outfield[i].im=0;
 	}
 	if(fftw_threads_init())
 	{
 			  fprintf(stderr,"Error initialising fftw threads\n");
 			  exit(1);
 	}
-/* 	pl=rfftw3d_create_plan(dims,dims,dims,FFTW_REAL_TO_COMPLEX, FFTW_ESTIMATE | FFTW_IN_PLACE); */
-/* 	rfftwnd_threads_one_real_to_complex(4,pl, field, NULL); */
-	pl=fftw3d_create_plan(dims,dims,dims,FFTW_FORWARD,FFTW_ESTIMATE | FFTW_IN_PLACE);
-	fftwnd_threads_one(4,pl,outfield,NULL);
-	//Now we compute the powerspectrum in each direction.
-	//FFTW is unnormalised, so we need to scale by the length of the array (we do this later).
-	//We could possibly dispense with some of this memory by reusing outfield, but hey.
+	pl=rfftw3d_create_plan(dims,dims,dims,FFTW_REAL_TO_COMPLEX, FFTW_ESTIMATE);
+	rfftwnd_threads_one_real_to_complex(4,pl, field, outfield);
+	/* Now we compute the powerspectrum in each direction.
+	 * FFTW is unnormalised, so we need to scale by the length of the array
+	 * (we do this later). */
+	/*We could possibly dispense with some of this memory by reusing outfield, but hey.*/
 	for(int i=0; i< nrbins; i++)
 	{
 		power[i]=0;
 		count[i]=0;
 		keffs[i]=0;
 	}
-	//Want P(k)= F(k).re*F(k).re+F(k).im*F(k).im
-	//Use the symmetry of the real fourier transform to half the final dimension.
-/* 	printf("npart=%d, cube root of npart=%d\n",npart,(int)cbrt(npart)); */
+	/* Want P(k)= F(k).re*F(k).re+F(k).im*F(k).im
+	 * Use the symmetry of the real fourier transform to half the final dimension.*/
 	for(int i=0; i<dims;i++)
 	{
-		int indx=i*dims2;
+		int indx=i*dims*(dims/2+1);
 		for(int j=0; j<dims; j++)
 		{
-			int indy=j*dims;
-			for(int k=0; k<dims; k++)
+			int indy=j*(dims/2+1);
+			/* The k=0 and N/2 mode need special treatment here, 
+			 * as they alone are not doubled.*/
+			/*Do k=0 mode.*/
+			int index=indx+indy;
+			float kk=sqrt(pow(KVAL(i),2)+pow(KVAL(j),2));
+			psindex=floor(binsperunit*kk);
+			power[psindex]+=pow(outfield[index].re,2)+pow(outfield[index].im,2);
+			count[psindex]++;
+			/*Now do the k=N/2 mode*/
+			index=indx+indy+dims/2;
+			kk=sqrt(pow(KVAL(i),2)+pow(KVAL(j),2)+pow(KVAL(dims/2),2));
+			psindex=floor(binsperunit*kk);
+			power[psindex]+=pow(outfield[index].re,2)+pow(outfield[index].im,2);
+			count[psindex]++;
+			/*Now do the rest. Because of the symmetry, each mode counts twice.*/
+			for(int k=1; k<dims/2; k++)
 			{
-				int index=indx+indy+k;
-				float kk=sqrt(pow(KVAL(i),2)+pow(KVAL(j),2)+pow(KVAL(k),2));
+				index=indx+indy+k;
+				kk=sqrt(pow(KVAL(i),2)+pow(KVAL(j),2)+pow(KVAL(k),2));
 				psindex=floor(binsperunit*kk);
-/* 				if(psindex < 2) */
-/* 						  printf("%e %d %d %d\n",kk,KVAL(i),KVAL(j),KVAL(k)); */
-				//Correct for shot noise and window function in IDL. 
-				//See my notes for the reason why.
-				power[psindex]+=pow(outfield[index].re,2)+pow(outfield[index].im,2);
-						  //*pow(invwindow(KVAL(i),KVAL(j),KVAL(k),dims),2);
-				count[psindex]++;
+				/* Correct for shot noise and window function in IDL. 
+				 * See my notes for the reason why.*/
+				power[psindex]+=2*(pow(outfield[index].re,2)+pow(outfield[index].im,2));
+				count[psindex]+=2;
 			}
+
 		}
 	}
 	for(int i=0; i< nrbins;i++)
 	{
 		
-/* 	power[i]/=pow(dims3,2); */
-		//bin center (k) is i+a.
-		//a is bin width/2, is 0.5
-		//k_eff is k+ 2a^2k/(a^2+3k^2)
+		/* bin center (k) is i+a.
+		 * a is bin width/2, is 0.5
+		 * k_eff is k+ 2a^2k/(a^2+3k^2) */
 		if(count[i])
 		{
 			float k=i*2.0*bwth;
 			keffs[i]=(k+bwth)+2*pow(bwth,2)*(k+bwth)/(pow(bwth,2)+3*pow((k+bwth),2));
-			//I do the division twice to avoid any overflow.
+			/* I do the division twice to avoid any overflow.*/
 			power[i]/=dims3;
 			power[i]/=dims3;
 			power[i]/=count[i];
@@ -100,68 +112,5 @@ int powerspectrum(int dims, fftw_real *field, int nrbins, float *power, float *c
 	free(outfield);
 /* 	return 0; */
 	return nrbins;
-
-//This doesn't work.
-#if 0
-#pragma omp parallel private(powerpriv,countpriv)
-{
-	powerpriv=malloc(nrbins*sizeof(float));
-	countpriv=malloc(nrbins*sizeof(int));
-	if(!powerpriv || !countpriv)
-	{
-		fprintf(stderr,"Error allocating memory for powerspectrum!");
-		exit(1);
-	}
-	for(int i=0; i<nrbins; i++)
-	{
-		powerpriv[i]=0;
-		countpriv[i]=0;
-	}
-	#pragma omp for schedule(static)
-	for(int i=0; i<dims; i++)
-	{
-		int indx=i*dims2;
-		for(int j=0; j<dims; j++)
-		{
-			//k=0 case.
-			int indy=j*dims;
-			psindex=floor(sqrt(pow(KVAL(i),2)+pow(KVAL(j),2)));
-			powerpriv[psindex]+=(pow(outfield[indx+indy].re,2)+pow(outfield[indx+indy].im,2));
-			countpriv[psindex]++;
-			for(int k=0; k<dims/2; k++)
-			{
-				int index=indx+indy+k;
-				psindex=floor(sqrt(pow(KVAL(i),2)+pow(KVAL(j),2)+pow(KVAL(k),2)));
-				powerpriv[psindex]+=2*(pow(outfield[index].re,2)+pow(outfield[index].im,2));
-				countpriv[psindex]+=2;
-			}
-			//The Nyquist frequency!
-			psindex=floor(sqrt(pow(KVAL(i),2)+pow(KVAL(j),2)+dims2/4));
-			powerpriv[psindex]+=(pow(outfield[indy+indx+dims/2].re,2)+pow(outfield[indx+indy+dims/2].im,2));
-			countpriv[psindex]++;
-		}
-	}
-	//Sync needs to be done carefully.
-	#pragma omp critical
-	{
-		for(int i=0; i<nrbins;i++)
-		{
-			power[i]+=powerpriv[i];
-			count[i]+=countpriv[i];
-		}
-	}
-	free(powerpriv);
-	free(countpriv);
-	#pragma omp for schedule(static)
-	//Perform normalization.
-	for(int i=0; i< nrbins;i++)
-	{
-		power[i]/=pow(dims3,2);
-		if(count[i]) power[i]/=count[i];
-	}
-}
-	fftwnd_destroy_plan(pl);
-	return nrbins;
-#endif
 }
 
