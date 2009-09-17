@@ -1,6 +1,7 @@
 PRO=-pg
-CC=gcc -O3  -c -std=gnu99 -fopenmp $(PRO)
+OF=
 #-DOLD_FORMAT
+CC=gcc -O3  -c -std=gnu99 $(OF) -fopenmp $(PRO)
 LINK=gcc -lm -lsrfftw_threads -lsfftw_threads -lsrfftw -lsfftw -lpthread -lgomp -L/data/store/spb41/apps/fftw/lib $(PRO)
 # icc; segfaults or fails to read.
 #CC=icc -O2 -g -c -c99

@@ -5,8 +5,6 @@
  * is about to be handed to an FFTW in-place routine, 
  * and set skip the last 2 places of the each row in the last dimension
  */
-//The overhead involved in openmp makes the parallel version 
-//slightly slower than the serial. Awesome.
 #include <math.h>
 #include <stdio.h>
 #define IL 16

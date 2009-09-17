@@ -1,8 +1,8 @@
 #include "gen-pk.h"
 /* Fieldize. positions should be an array of size 3*particles 
  * (like the output of read_gadget_float3)
- * out is an array of size [dims*dims*dims]*/
-/* the "extra" switch, if set to one, will assume that the output 
+ * out is an array of size [dims*dims*dims]
+ * the "extra" switch, if set to one, will assume that the output 
  * is about to be handed to an FFTW in-place routine, 
  * and set skip the last 2 places of the each row in the last dimension
  */
@@ -12,6 +12,7 @@
 
 int main(char argc, char* argv[]){
   int field_dims;
+  int old =0;
   int npart[5],nrbins;
   double massarr[5], time, redshift;
   double boxsize;
@@ -23,12 +24,16 @@ int main(char argc, char* argv[]){
 			 exit(0);
   }
   FILE *fd=fopen(argv[1],"r");
+  if(argc>2)
+  {
+      old=atoi(argv[2]);
+  }
   if(!fd)
   {
 		fprintf(stderr,"Error opening file for reading!\n");
 		exit(1);
   }
-  if(!read_gadget_head(npart, massarr, &time, &redshift,&boxsize, fd))
+  if(!read_gadget_head(npart, massarr, &time, &redshift,&boxsize, fd, old))
   {
 		fprintf(stderr,"Error reading file header!\n");
 		exit(1);
@@ -43,7 +48,7 @@ int main(char argc, char* argv[]){
 		fprintf(stderr,"Error allocating particle memory\n");
 		exit(1);
   }
-  if(!read_gadget_float3(pos, "POS ",fd))
+  if(!read_gadget_float3(pos, "POS ",fd, old))
   {
 		fprintf(stderr, "Error reading particle data\n");
 		exit(1);
@@ -62,11 +67,19 @@ int main(char argc, char* argv[]){
   }
   nrbins=powerspectrum(field_dims,field,nrbins, power,count,keffs,npart[1]);
   free(field);
- for(int i=0;i<nrbins;i++)
- {
-	if(count[i])
-		printf("%e\t%e\t%e\n",keffs[i],power[i],count[i]);
- }
+  /*If this is an old format file, adjust for the difference of 2π^3 in conventions*/
+  if(old)
+    for(int i=0;i<nrbins;i++)
+    {
+   	if(count[i])
+   		printf("%e\t%e\t%e\n",keffs[i],pow(2*M_PI,3)*power[i],count[i]);
+    }
+  else
+    for(int i=0;i<nrbins;i++)
+    {
+   	if(count[i])
+   		printf("%e\t%e\t%e\n",keffs[i],power[i],count[i]);
+    }
 	free(power);
 	free(count);
   return 0;

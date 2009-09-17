@@ -143,15 +143,15 @@ int find_block(FILE *fd,char *label)
 /*-------- FILE *fd:      File handle -----------------------------------------*/
 /*-------- returns number of read bytes ---------------------------------------*/
 /*-----------------------------------------------------------------------------*/
-int read_gadget_head(int *npart,double *massarr,double *time,double *redshift,double *boxsize, FILE *fd)
+int read_gadget_head(int *npart,double *massarr,double *time,double *redshift,double *boxsize, FILE *fd, int old)
 {
   int blocksize,dummysize,i;
-#ifndef OLD_FORMAT
-  blocksize = find_block(fd,"HEAD");
-#else 
-  blocksize=sizeof(header);
-  blksize=8;
-#endif
+  if(!old)
+    blocksize = find_block(fd,"HEAD");
+  else{
+    blocksize=sizeof(header);
+    blksize=8;
+  }
   if(blocksize <= 0)
     {
       printf("Block <%s> not fond !\n","HEAD");
@@ -222,15 +222,15 @@ int read_gadget_float(float *data,char *label,FILE *fd)
 /*-------- FILE *fd:      File handle -----------------------------------------*/
 /*-------- returns length of dataarray ----------------------------------------*/
 /*-----------------------------------------------------------------------------*/
-int read_gadget_float3(float *data,char *label,FILE *fd)
+int read_gadget_float3(float *data,char *label,FILE *fd, int old)
 {
   int blocksize,i;
 
-#ifndef OLD_FORMAT
-  blocksize = find_block(fd,label);
-#else
+  if(!old)
+    blocksize = find_block(fd,label);
+  else{
 	blocksize=3*header.npart[1]*sizeof(float);
-#endif
+  }
   if(blocksize <= 0)
     {
       printf("Block <%s> not fond !\n",label);

@@ -26,7 +26,6 @@ int powerspectrum(int dims, float *field, int nrbins, float *power, float *count
 		fprintf(stderr, "fftw_real is not a float. Perhaps you linked the wrong library?\n");
 		exit(1);
 	}
-/* 	outfield=malloc(2*dims*dims*(dims/2+1)*sizeof(fftw_real)); */
 	outfield=(fftw_complex *) &field[0];
 	if(!outfield){
 			  fprintf(stderr, "Error allocating memory for outfield!\n");
@@ -38,18 +37,28 @@ int powerspectrum(int dims, float *field, int nrbins, float *power, float *count
 			  exit(1);
 	}
 	pl=rfftw3d_create_plan(dims,dims,dims,FFTW_REAL_TO_COMPLEX, FFTW_ESTIMATE | FFTW_IN_PLACE);
-/* 	pl=rfftw3d_create_plan(dims,dims,dims,FFTW_REAL_TO_COMPLEX, FFTW_ESTIMATE); */
 	rfftwnd_threads_one_real_to_complex(4,pl, &field[0], outfield);
 	/* Now we compute the powerspectrum in each direction.
 	 * FFTW is unnormalised, so we need to scale by the length of the array
 	 * (we do this later). */
-	for(int i=0; i< nrbins; i++)
+	for(int i=0; i< nrbins/2; i++)
 	{
 		/* bin center (k) is i+a.
 		 * a is bin width/2, is 0.5
 		 * k_eff is k+ 2a^2k/(a^2+3k^2) */
 		float k=i*2.0*bwth;
 		keffs[i]=(k+bwth)+2*pow(bwth,2)*(k+bwth)/(pow(bwth,2)+3*pow((k+bwth),2));
+		power[i]=0;
+		count[i]=0;
+	}
+	/*After this point, the number of modes is decreasing.*/
+	for(int i=nrbins/2; i< nrbins; i++)
+	{
+		/* bin center (k) is i+a.
+		 * a is bin width/2, is 0.5
+		 * k_eff is k+ 2a^2k/(a^2+3k^2) */
+		float k=i*2.0*bwth;
+		keffs[i]=(k+bwth)-2*pow(bwth,2)*(k+bwth)/(pow(bwth,2)+3*pow((k+bwth),2));
 		power[i]=0;
 		count[i]=0;
 	}
@@ -77,13 +86,13 @@ int powerspectrum(int dims, float *field, int nrbins, float *power, float *count
 				int index=indx+indy;
 				float kk=sqrt(pow(KVAL(i),2)+pow(KVAL(j),2));
 				int psindex=floor(binsperunit*kk);
-				powerpriv[psindex]+=pow(outfield[index].re,2)+pow(outfield[index].im,2);
+				powerpriv[psindex]+=(pow(outfield[index].re,2)+pow(outfield[index].im,2))*pow(invwindow(KVAL(i),KVAL(j),0,dims),2);
 				countpriv[psindex]++;
 				/*Now do the k=N/2 mode*/
 				index=indx+indy+dims/2;
 				kk=sqrt(pow(KVAL(i),2)+pow(KVAL(j),2)+pow(KVAL(dims/2),2));
 				psindex=floor(binsperunit*kk);
-				powerpriv[psindex]+=pow(outfield[index].re,2)+pow(outfield[index].im,2);
+				powerpriv[psindex]+=(pow(outfield[index].re,2)+pow(outfield[index].im,2))*pow(invwindow(KVAL(i),KVAL(j),KVAL(dims/2),dims),2);
 				countpriv[psindex]++;
 				/*Now do the rest. Because of the symmetry, each mode counts twice.*/
 				for(int k=1; k<dims/2; k++)
@@ -93,7 +102,7 @@ int powerspectrum(int dims, float *field, int nrbins, float *power, float *count
 					psindex=floor(binsperunit*kk);
 					/* Correct for shot noise and window function in IDL. 
 					 * See my notes for the reason why.*/
-					powerpriv[psindex]+=2*(pow(outfield[index].re,2)+pow(outfield[index].im,2));
+					powerpriv[psindex]+=2*(pow(outfield[index].re,2)+pow(outfield[index].im,2))*pow(invwindow(KVAL(i),KVAL(j),KVAL(k),dims),2);
 					countpriv[psindex]+=2;
 				}
 			}
