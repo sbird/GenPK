@@ -7,7 +7,7 @@
  */
 #include <math.h>
 #include <stdio.h>
-#define IL 16
+#define IL 1
 
 int fieldize(double boxsize, int dims, float *out, int particles, float *positions,int extra)
 {
@@ -39,7 +39,9 @@ int fieldize(double boxsize, int dims, float *out, int particles, float *positio
 				dx[i]=x[i]-fx[i];
 				tx[i]=1.0-dx[i];
 				nex[i]=(fx[i]+1)%dims;
+            if(nex[i]<0) nex[i]+=dims;
 				fx[i]%=dims;
+            if(fx[i]<0) fx[i]+=dims;
 			}
 			temp[k][0]=invrho*tx[0]*tx[1]*tx[2];
 			temp[k][1]=invrho*dx[0]*tx[1]*tx[2];
