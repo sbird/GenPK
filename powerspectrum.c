@@ -1,4 +1,5 @@
 #include "gen-pk.h"
+#include <omp.h>
 
 /*Note we need some contiguous memory space after the actual data in field. *The real input data has size
  *dims*dims*dims
@@ -37,7 +38,7 @@ int powerspectrum(int dims, float *field, int nrbins, float *power, float *count
 			  exit(1);
 	}
 	pl=rfftw3d_create_plan(dims,dims,dims,FFTW_REAL_TO_COMPLEX, FFTW_ESTIMATE | FFTW_IN_PLACE);
-	rfftwnd_threads_one_real_to_complex(4,pl, &field[0], outfield);
+	rfftwnd_threads_one_real_to_complex(omp_get_num_procs(),pl, &field[0], outfield);
 	/* Now we compute the powerspectrum in each direction.
 	 * FFTW is unnormalised, so we need to scale by the length of the array
 	 * (we do this later). */
