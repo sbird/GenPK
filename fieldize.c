@@ -7,7 +7,7 @@
  */
 #include <math.h>
 #include <stdio.h>
-#define IL 1
+#define IL 16
 
 int fieldize(double boxsize, int dims, float *out, int particles, float *positions,int extra)
 {
@@ -25,7 +25,7 @@ int fieldize(double boxsize, int dims, float *out, int particles, float *positio
 	for(int i=0; i<dims2; i+=fdims)
 		for(int j=0; j<dims;j++)
 				out[i+j]=-1;
-	#pragma omp for schedule(static, 32768) nowait
+	#pragma omp for schedule(static, 4096) nowait
 	for(int index=0;index<particles;index+=IL)
 	{
 		float dx[3],tx[3], x[3], temp[IL][8];

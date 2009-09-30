@@ -11,7 +11,7 @@
 /*Little macro to work the storage order of the FFT.*/
 #define KVAL(n) ((n)<=dims/2 ? (n) : ((n)-dims))
 
-int powerspectrum(int dims, float *field, int nrbins, float *power, float *count,float *keffs,int npart)
+int powerspectrum(int dims, float *field, int nrbins, float *power, float *count,float *keffs)
 {
 	fftwnd_plan pl;
 	fftw_complex *outfield;
@@ -74,7 +74,7 @@ int powerspectrum(int dims, float *field, int nrbins, float *power, float *count
 		}
 		/* Want P(k)= F(k).re*F(k).re+F(k).im*F(k).im
 		 * Use the symmetry of the real fourier transform to half the final dimension.*/
-		#pragma omp for schedule(static, 256) nowait
+		#pragma omp for schedule(static, 128) nowait
 		for(int i=0; i<dims;i++)
 		{
 			int indx=i*dims*(dims/2+1);

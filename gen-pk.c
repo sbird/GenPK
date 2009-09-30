@@ -38,6 +38,7 @@ int main(char argc, char* argv[]){
 		fprintf(stderr,"Error reading file header!\n");
 		exit(1);
   }
+  fprintf(stderr, "Boxsize=%g, npart=%g, redshift=%g\n",boxsize,cbrt(npart[1]),redshift);
   field_dims=(2*cbrt(npart[1]) < FIELD_DIMS ? 2*cbrt(npart[1]) : FIELD_DIMS);
   nrbins=floor(sqrt(3)*abs((field_dims+1.0)/2.0)+1);
   pos=malloc(3*(npart[1]+1)*sizeof(float));
@@ -65,22 +66,9 @@ int main(char argc, char* argv[]){
 		fprintf(stderr,"Error allocating memory for power spectrum.\n");
 		exit(1);
   }
-  nrbins=powerspectrum(field_dims,field,nrbins, power,count,keffs,npart[1]);
+  nrbins=powerspectrum(field_dims,field,nrbins, power,count,keffs);
   free(field);
-  /*If this is an old format file, adjust for the difference of 2π^3 in conventions*/
-  if(old)
-    for(int i=0;i<nrbins;i++)
-    {
-   	if(count[i])
-   		printf("%e\t%e\t%e\n",keffs[i],pow(2*M_PI,3)*power[i],count[i]);
-    }
-  else
-    for(int i=0;i<nrbins;i++)
-    {
-   	if(count[i])
-   		printf("%e\t%e\t%e\n",keffs[i],power[i],count[i]);
-    }
-	free(power);
-	free(count);
+  free(power);
+  free(count);
   return 0;
 }
