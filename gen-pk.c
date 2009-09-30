@@ -67,6 +67,11 @@ int main(char argc, char* argv[]){
 		exit(1);
   }
   nrbins=powerspectrum(field_dims,field,nrbins, power,count,keffs);
+  for(int i=0;i<nrbins;i++)
+  {
+    if(count[i])
+      printf("%e\t%e\t%e\n",keffs[i],power[i],count[i]);
+  }
   free(field);
   free(power);
   free(count);
