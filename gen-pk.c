@@ -14,6 +14,7 @@ int main(char argc, char* argv[]){
   int field_dims;
   int old =0;
   int npart[5],nrbins;
+  int64_t total_part;
   double massarr[5], time, redshift;
   double boxsize;
   float *pos, *power, *count, *keffs;
@@ -38,10 +39,11 @@ int main(char argc, char* argv[]){
 		fprintf(stderr,"Error reading file header!\n");
 		exit(1);
   }
-  fprintf(stderr, "Boxsize=%g, npart=%g, redshift=%g\n",boxsize,cbrt(npart[1]),redshift);
+  fprintf(stderr, "Boxsize=%g, npart=[%g,%g,%g,%g,%g], redshift=%g\n",boxsize,cbrt(npart[0]),cbrt(npart[1]),cbrt(npart[2]),cbrt(npart[3]),cbrt(npart[4]),redshift);
   field_dims=(2*cbrt(npart[1]) < FIELD_DIMS ? 2*cbrt(npart[1]) : FIELD_DIMS);
-  nrbins=floor(sqrt(3)*abs((field_dims+1.0)/2.0)+1);
-  pos=malloc(3*(npart[1]+1)*sizeof(float));
+  nrbins=floor(sqrt(3)*((field_dims+1.0)/2.0)+1);
+  total_part=npart[0]+npart[1]+npart[2]+npart[3]+npart[4];
+  pos=malloc(3*(total_part+1)*sizeof(float));
   /* Allocating a bit more memory allows us to do in-place transforms.*/
   field=malloc(2*field_dims*field_dims*(field_dims/2+1)*sizeof(float));
   if(!pos || !field)
@@ -56,7 +58,7 @@ int main(char argc, char* argv[]){
   }
   //By now we should have the data.
   fclose(fd);
-  fieldize(boxsize,field_dims,field,npart[1],pos, 1);
+  fieldize(boxsize,field_dims,field,total_part,pos, 1);
   free(pos);
   power=malloc(nrbins*sizeof(float));
   count=malloc(nrbins*sizeof(float));

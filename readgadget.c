@@ -85,7 +85,7 @@ void swap_Nbyte(char *data,int n,int m)
 /*-------- returns length of block found, -------------------------------------*/
 /*-------- the file fd points to starting point of block ----------------------*/
 /*-----------------------------------------------------------------------------*/
-int find_block(FILE *fd,char *label)
+int64_t find_block(FILE *fd,char *label)
 {
   int4bytes blocksize=0;
   char blocklabel[5]={"    "};
@@ -114,7 +114,7 @@ int find_block(FILE *fd,char *label)
            my_fread(&blocksize, sizeof(int4bytes), 1, fd);
            swap_Nbyte((char*)&blocksize,1,4);
 #ifdef MY_DEBUG
-           printf("Found Block <%s> with %d bytes\n",blocklabel,blocksize);
+         fprintf(stderr, "Found Block <%s> with %d bytes\n",blocklabel,blocksize);
 #endif
            SKIP;
 	   if(strcmp(label,blocklabel)!=0)
@@ -154,7 +154,7 @@ int read_gadget_head(int *npart,double *massarr,double *time,double *redshift,do
   }
   if(blocksize <= 0)
     {
-      printf("Block <%s> not fond !\n","HEAD");
+      fprintf(stderr, "Block <%s> not found!\n","HEAD");
       exit(5);
     }
   else
@@ -193,13 +193,13 @@ int read_gadget_head(int *npart,double *massarr,double *time,double *redshift,do
 /*-------- FILE *fd:      File handle -----------------------------------------*/
 /*-------- returns length of dataarray ----------------------------------------*/
 /*-----------------------------------------------------------------------------*/
-int read_gadget_float(float *data,char *label,FILE *fd)
+int64_t read_gadget_float(float *data,char *label,FILE *fd)
 {
-  int blocksize;
+  int64_t blocksize;
   blocksize = find_block(fd,label);
   if(blocksize <= 0)
     {
-      printf("Block <%s> not found !\n",label);
+      fprintf(stderr, "Block (float) <%s> not found!\n",label);
       exit(5);
     }
   else
@@ -222,9 +222,9 @@ int read_gadget_float(float *data,char *label,FILE *fd)
 /*-------- FILE *fd:      File handle -----------------------------------------*/
 /*-------- returns length of dataarray ----------------------------------------*/
 /*-----------------------------------------------------------------------------*/
-int read_gadget_float3(float *data,char *label,FILE *fd, int old)
+int64_t read_gadget_float3(float *data,char *label,FILE *fd, int old)
 {
-  int blocksize,i;
+  int64_t blocksize,i;
 
   if(!old)
     blocksize = find_block(fd,label);
@@ -233,7 +233,7 @@ int read_gadget_float3(float *data,char *label,FILE *fd, int old)
   }
   if(blocksize <= 0)
     {
-      printf("Block <%s> not fond !\n",label);
+      fprintf(stderr, "Block (float3) <%s> not found!\n",label);
       exit(5);
     }
   else

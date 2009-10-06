@@ -8,14 +8,14 @@ LINK=gcc -lm -lsrfftw_threads -lsfftw_threads -lsrfftw -lsfftw -lpthread -lgomp 
 #LINK=icc -lm -lsrfftw_threads -lsfftw_threads -lsrfftw -lsfftw -lpthread -L/data/store/spb41/apps/fftw/lib $(PRO)
 .PHONY:all love clean
 all:gen-pk
-gen-pk:powerspectrum.o fieldize.o readgadget.o gen-pk.c
+gen-pk:powerspectrum.o fieldize.o readgadget.o gen-pk.c gen-pk.h
 	${CC} gen-pk.c
 	${LINK} fieldize.o powerspectrum.o readgadget.o gen-pk.o -o gen-pk
 powerspectrum.o: powerspectrum.c
 	${CC} powerspectrum.c
 fieldize.o:fieldize.c
 	${CC} fieldize.c
-readgadget.o: readgadget.c
+readgadget.o: readgadget.c readgadget.h
 	${CC} readgadget.c
 love:
 	@echo "Not war?" ; sleep 3
