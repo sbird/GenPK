@@ -1,4 +1,4 @@
-/* Fieldize. positions should be an array of size 3*particles 
+/* Fieldize. positions should be an array of size 3*segment_particles 
  * (like the output of read_gadget_float3)
  * out is an array of size [dims*dims*dims]*/
 /* the "extra" switch, if set to one, will assume that the output 
@@ -9,14 +9,14 @@
 #include <stdio.h>
 #define IL 16
 
-int fieldize(double boxsize, int dims, float *out, int particles, float *positions,int extra)
+int fieldize(double boxsize, int dims, float *out, int total_particles, int segment_particles, float *positions,int extra)
 {
 	const int dims3=pow(dims,3);
 	const int fdims=2*(dims/2+extra);
 	/*If extra is on, we want to leave space for FFTW 
 	 * to put the extra bits, so skip a couple of places.*/
 	const int dims2=fdims*dims;
-	const float invrho=dims3/(float)particles;
+	const float invrho=dims3/(float)total_particles;
 	const float units=dims/boxsize;
 	/* This is one over density.*/
 #pragma omp parallel
@@ -26,7 +26,7 @@ int fieldize(double boxsize, int dims, float *out, int particles, float *positio
 		for(int j=0; j<dims;j++)
 				out[i+j]=-1;
 	#pragma omp for schedule(static, 4096) nowait
-	for(int index=0;index<particles;index+=IL)
+	for(int index=0;index<segment_particles;index+=IL)
 	{
 		float dx[3],tx[3], x[3], temp[IL][8];
 		int fx[3],nex[3],temp2[IL][8];
