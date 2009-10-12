@@ -1,24 +1,18 @@
 #include "gen-pk.h"
-/* Fieldize. positions should be an array of size 3*particles 
- * (like the output of read_gadget_float3)
- * out is an array of size [dims*dims*dims]
- * the "extra" switch, if set to one, will assume that the output 
- * is about to be handed to an FFTW in-place routine, 
- * and set skip the last 2 places of the each row in the last dimension
- */
-
+#include <limits.h>
 /* In practice this means we need just over 4GB, as sizeof(float)=4*/
 #define FIELD_DIMS 1024
+#define PART_TYPES 6
+int nexttwo(int);
 
 int main(char argc, char* argv[]){
   int field_dims;
-  int old =0;
-  int npart[5],nrbins;
-  int nfiles=1, file, segment_part;
-  int64_t total_part;
-  double massarr[5], time, redshift;
-  double boxsize;
-  float *pos, *power, *count, *keffs;
+  int old =0, type;
+  int tot_npart[PART_TYPES],nrbins[PART_TYPES];
+  int nfiles=1, file;
+  struct gadget_header *headers;
+  double boxsize, redshift;
+  float *pos, *power[PART_TYPES], *count[PART_TYPES], *keffs[PART_TYPES];
   float *field;
   FILE *fd;
   if(argc<3)
@@ -39,76 +33,145 @@ int main(char argc, char* argv[]){
 		 fprintf(stderr,"Filenames don't match number of files specified.\n");
 		 exit(0);
   }
-  /*First read the header and allocate memory.*/
-  fd=fopen(argv[2],"r");
-  if(!fd)
+  headers=malloc(nfiles*sizeof(struct gadget_header));
+  if(!headers)
   {
-		fprintf(stderr,"Error opening file %s for reading!\n", argv[2]);
-		exit(1);
+    fprintf(stderr, "Error allocating memory for headers.\n");
+    exit(1);
   }
-  if(!read_gadget_head(npart, massarr, &time, &redshift,&boxsize, fd, old))
+  /*First read all the headers, allocate some memory and work out the totals.*/
+  for(file=0; file<nfiles; file++)
   {
-		fprintf(stderr,"Error reading file header!\n");
-		exit(1);
+     fd=fopen(argv[2],"r");
+     if(!fd)
+     {
+   		fprintf(stderr,"Error opening file %s for reading!\n", argv[2]);
+   		exit(1);
+     }
+     if(!read_gadget_head(headers+file, fd, old))
+     {
+   		fprintf(stderr,"Error reading file header!\n");
+   		exit(1);
+     }
+     //By now we should have the header data.
+     fclose(fd);
   }
-  fprintf(stderr, "Boxsize=%g, npart=[%g,%g,%g,%g,%g], redshift=%g\n",boxsize,cbrt(npart[0]*nfiles),cbrt(npart[1]*nfiles),cbrt(npart[2]*nfiles),cbrt(npart[3]*nfiles),cbrt(npart[4]*nfiles),redshift);
-  field_dims=(2*cbrt(npart[1]) < FIELD_DIMS ? 2*cbrt(npart[1]) : FIELD_DIMS);
-  nrbins=floor(sqrt(3)*((field_dims+1.0)/2.0)+1);
-  /* Here we are assuming that the particles are divided evenly amongst the files.
-   * This will be the case if numfiles divides npart evenly.*/
-  segment_part=npart[0]+npart[1]+npart[2]+npart[3]+npart[4];
-  total_part=segment_part*nfiles;
-  pos=malloc(3*(segment_part+1)*sizeof(float));
-  /* Allocating a bit more memory allows us to do in-place transforms.*/
-  field=malloc(2*field_dims*field_dims*(field_dims/2+1)*sizeof(float));
-  if(!pos || !field)
+  boxsize=headers[0].BoxSize;
+  redshift=headers[0].redshift;
+  for(type=0;type<PART_TYPES;type++)
+          tot_npart[type]=0;
+  /*Assemble totals, check all the files are from the same simulation*/
+  for(file=0;file<nfiles;file++)
   {
-		fprintf(stderr,"Error allocating particle memory\n");
-		exit(1);
+     if(boxsize!=headers[file].BoxSize)
+     {
+       fprintf(stderr,"Error! Box size from file 0 is %e, while file %d has %e\n",boxsize,file,headers[file].BoxSize);
+       exit(2);
+     }
+     if(redshift!=headers[file].redshift)
+     {
+       fprintf(stderr,"Error! Redshift from file 0 is %e, while file %d has %e\n",redshift,file,headers[file].redshift);
+       exit(2);
+     }
+     for(type=0;type<PART_TYPES;type++)
+       tot_npart[type]+=headers[file].npart[type];
   }
-  if(!read_gadget_float3(pos, "POS ",fd, old))
+     fprintf(stderr, "Boxsize=%g, tot_npart=[%g,%g,%g,%g,%g,%g], redshift=%g\n",boxsize,cbrt(tot_npart[0]),cbrt(tot_npart[1]),cbrt(tot_npart[2]),cbrt(tot_npart[3]),cbrt(tot_npart[4]),cbrt(tot_npart[5]),redshift);
+  /*Now read the particle data.*/
+  for(type=0; type<PART_TYPES; type++)
   {
-		fprintf(stderr, "Error reading particle data\n");
-		exit(1);
-  }
-  //By now we should have the data.
-  fclose(fd);
-  fieldize(boxsize,field_dims,field,total_part, segment_part,pos, 1);
-  /*Now read the rest of the files, if there are any.*/
-  for(file=1; file<nfiles; file++)
-  {
-    fd=fopen(argv[file+2],"r");
-    if(!fd)
+    if(tot_npart[type]==0)
+      continue;
+    /* Definitely a faster bitshifting way to do this. */
+    int tmp=2*nexttwo(cbrt(tot_npart[type]));
+    field_dims=(tmp < FIELD_DIMS ? tmp : FIELD_DIMS);
+    nrbins[type]=floor(sqrt(3)*((field_dims+1.0)/2.0)+1);
+    /* Allocating a bit more memory allows us to do in-place transforms.*/
+    field=malloc(2*field_dims*field_dims*(field_dims/2+1)*sizeof(float));
+    if(!field)
     {
-   	fprintf(stderr,"Error opening file %s for reading!\n", argv[file+2]);
-   	exit(1);
-    }
-    if(!read_gadget_float3(pos, "POS ",fd, old))
-    {
-  		fprintf(stderr, "Error reading particle data\n");
+  		fprintf(stderr,"Error allocating memory for field\n");
   		exit(1);
     }
-    //By now we should have the data.
-    fclose(fd);
-    fieldize(boxsize,field_dims,field,total_part,segment_part,pos, 1);
+    for(file=0; file<nfiles; file++)
+    {
+      int npart=headers[file].npart[type];
+      fd=fopen(argv[file+2],"r");
+      if(!fd)
+      {
+        	fprintf(stderr,"Error opening file %s for reading!\n", argv[file+2]);
+        	exit(1);
+      }
+      pos=malloc(3*(npart+1)*sizeof(float));
+      if(!pos)
+      {
+    		fprintf(stderr,"Error allocating particle memory\n");
+    		exit(1);
+      }
+      if(read_gadget_float3(pos, "POS ",(type<0 ? 0 : headers[file].npart[type-1]) ,npart, fd,old) != npart)
+      {
+    		fprintf(stderr, "Error reading particle data\n");
+    		exit(1);
+      }
+      //By now we should have the data.
+      fclose(fd);
+    /* Fieldize. positions should be an array of size 3*particles 
+     * (like the output of read_gadget_float3)
+     * out is an array of size [dims*dims*dims]
+     * the "extra" switch, if set to one, will assume that the output 
+     * is about to be handed to an FFTW in-place routine, 
+     * and set skip the last 2 places of the each row in the last dimension
+     */
+      fieldize(boxsize,field_dims,field,tot_npart[type],npart,pos, 1);
+      free(pos);
+    }
+    power[type]=malloc(nrbins[type]*sizeof(float));
+    count[type]=malloc(nrbins[type]*sizeof(float));
+    keffs[type]=malloc(nrbins[type]*sizeof(float));
+    if(!power[type] || !count[type] || !keffs[type])
+    {
+  		fprintf(stderr,"Error allocating memory for power spectrum.\n");
+  		exit(1);
+    }
+    nrbins[type]=powerspectrum(field_dims,field,nrbins[type], power[type],count[type],keffs[type]);
+    free(field);
+    fprintf(stderr, "Type %d done\n",type);
   }
-  free(pos);
-  power=malloc(nrbins*sizeof(float));
-  count=malloc(nrbins*sizeof(float));
-  keffs=malloc(nrbins*sizeof(float));
-  if(!power || !count || !keffs)
+  /*Only print out DM particles for now*/
+  for(int i=0;i<nrbins[0];i++)
   {
-		fprintf(stderr,"Error allocating memory for power spectrum.\n");
-		exit(1);
+    if(count[0][i])
+      printf("%e\t%e\t%e\n",keffs[0][i],power[0][i],count[0][i]);
   }
-  nrbins=powerspectrum(field_dims,field,nrbins, power,count,keffs);
-  for(int i=0;i<nrbins;i++)
+  for(type=0; type<PART_TYPES; type++)
   {
-    if(count[i])
-      printf("%e\t%e\t%e\n",keffs[i],power[i],count[i]);
+    if(tot_npart[type])
+    {
+     free(power[type]);
+     free(count[type]);
+     free(keffs[type]);
+    }
   }
-  free(field);
-  free(power);
-  free(count);
   return 0;
+}
+
+/*Returns the maximum value of an array of size size*/
+/*int maxarr(int *arr, int size)
+{
+   int max=*arr;
+   while(arr<arr+size)
+   {
+      max=(max > *(++arr) ? max : *arr);
+   }
+   return max;
+}*/
+
+/*Returns the next power of two. Stolen from wikipedia.*/
+int nexttwo(int n)
+{
+    int i;
+    n--;
+    for(i=1;i<sizeof(int)*CHAR_BIT; i<<=1)
+       n |= n>>i;
+    return ++n; 
 }

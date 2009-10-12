@@ -5,24 +5,7 @@
 #include "readgadget.h"
 #define int4bytes int
 
-struct io_header_1
-{
-  int      npart[6];
-  double   mass[6];
-  double   time;
-  double   redshift;
-  int      flag_sfr;
-  int      flag_feedback;
-  int      npartTotal[6];
-  int      flag_cooling;
-  int      numfiles;
-  double   BoxSize;
-  double   Omega0;
-  double   OmegaLambda;
-  double   HubbleParam;
-  char     fill[256- 6*4- 6*8- 2*8- 2*4- 6*4- 2*4 - 4*8];  /* fills to 256 Bytes
- */
-} header;
+struct gadget_header header;
 
 /*--------- comment/uncomment to remove/enable DEBUG outputs ------------------*/
 /*
@@ -46,7 +29,7 @@ size_t my_fread(void *ptr, size_t size, size_t nmemb, FILE * stream)
 
   if((nread = fread(ptr, size, nmemb, stream)) != nmemb)
     {
-      fprintf(stderr, "I/O error (fread) !\n");
+      fprintf(stderr, "fread error: %d = fread(%d %d %d file)!\n",nread,ptr,size,nmemb);
       exit(3);
     }
   return nread;
@@ -143,7 +126,7 @@ int64_t find_block(FILE *fd,char *label)
 /*-------- FILE *fd:      File handle -----------------------------------------*/
 /*-------- returns number of read bytes ---------------------------------------*/
 /*-----------------------------------------------------------------------------*/
-int read_gadget_head(int *npart,double *massarr,double *time,double *redshift,double *boxsize, FILE *fd, int old)
+int read_gadget_head(struct gadget_header *out_header, FILE *fd, int old)
 {
   int blocksize,dummysize,i;
   if(!old)
@@ -174,14 +157,7 @@ int read_gadget_head(int *npart,double *massarr,double *time,double *redshift,do
 		 fprintf(stderr, "boxsize=%e\n",header.BoxSize);
 	#endif
        SKIP;
-		 *time=header.time;
-		 *redshift=header.redshift;
-		 *boxsize=header.BoxSize;
-		 for(i=0;i<6;i++)
-		 {
-			npart[i]=header.npart[i];
-			massarr[i]=header.mass[i];
-		 }
+       *out_header=header;
     }
   return(blocksize);
 }
@@ -219,10 +195,13 @@ int64_t read_gadget_float(float *data,char *label,FILE *fd)
 /*---------------------- Routine to read a 3D float array ---------------------*/
 /*-------- float *data:     Pointer where the data are stored to ----------------*/
 /*-------- char *label:   Identifyer for the datafield to read ----------------*/
+/*-------- int offset:   Number of elements into the block to start. 
+ *-------- Note an "element" is 3 floats. ----------------*/
+/*-------- int number:  Total values to read ----------------*/
 /*-------- FILE *fd:      File handle -----------------------------------------*/
 /*-------- returns length of dataarray ----------------------------------------*/
 /*-----------------------------------------------------------------------------*/
-int64_t read_gadget_float3(float *data,char *label,FILE *fd, int old)
+int64_t read_gadget_float3(float *data,char *label,int offset, int number, FILE *fd, int old)
 {
   int64_t blocksize,i;
 
@@ -238,10 +217,13 @@ int64_t read_gadget_float3(float *data,char *label,FILE *fd, int old)
     }
   else
     {
+       blocksize=(blocksize < 3*number*sizeof(float) ? blocksize : 3*number*sizeof(float));
 #ifdef MY_DEBUG
-       printf("Reding %d bytes of data from <%s>...\n",blocksize,label);
+       printf("Reading %d bytes of data from <%s>...\n",blocksize,label);
 #endif
        SKIP;
+       if(offset)
+          fseek(fd,offset,SEEK_CUR);
        my_fread(data,blocksize, 1, fd);
        swap_Nbyte((char*)data,blocksize/sizeof(float),4);
 #ifdef MY_DEBUG
