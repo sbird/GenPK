@@ -88,7 +88,7 @@ int64_t find_block(FILE *fd,char *label)
 	 }
        if(blksize != 8)
          {
-	   printf("incorrect format (blksize=%d)!\n",blksize);
+	   fprintf(stderr,"incorrect format (blksize=%d)!\n",blksize);
            exit(1);
          }
        else
@@ -219,7 +219,7 @@ int64_t read_gadget_float3(float *data,char *label,int offset, int number, FILE 
     {
        blocksize=(blocksize < 3*number*sizeof(float) ? blocksize : 3*number*sizeof(float));
 #ifdef MY_DEBUG
-       printf("Reading %d bytes of data from <%s>...\n",blocksize,label);
+       fprintf(stderr,"Reading %d bytes of data from <%s>...\n",blocksize,label);
 #endif
        SKIP;
        if(offset)

@@ -4,15 +4,19 @@
 #define FIELD_DIMS 1024
 #define PART_TYPES 6
 int nexttwo(int);
+#define MAX(x,y) ((x) > (y) ? (x) :(y))
+#define MIN(x,y) ((x) < (y) ? (x) :(y))
 
 int main(char argc, char* argv[]){
-  int field_dims;
+  int field_dims=0;
   int old =0, type;
-  int tot_npart[PART_TYPES],nrbins[PART_TYPES];
+  int tot_npart[PART_TYPES],nrbins;
+  double mass[PART_TYPES],tot_mass;
   int nfiles=1, file;
   struct gadget_header *headers;
   double boxsize, redshift;
   float *pos, *power[PART_TYPES], *count[PART_TYPES], *keffs[PART_TYPES];
+  float *tot_power,*tot_keffs;
   float *field;
   FILE *fd;
   if(argc<3)
@@ -58,9 +62,15 @@ int main(char argc, char* argv[]){
   }
   boxsize=headers[0].BoxSize;
   redshift=headers[0].redshift;
+  tot_mass=0;
   for(type=0;type<PART_TYPES;type++)
+  {
           tot_npart[type]=0;
+          mass[type]=headers[0].mass[type];
+          tot_mass+=mass[type];
+  }
   /*Assemble totals, check all the files are from the same simulation*/
+  /*We can of course get totals from the header, but I don't really want to.*/
   for(file=0;file<nfiles;file++)
   {
      if(boxsize!=headers[file].BoxSize)
@@ -74,18 +84,30 @@ int main(char argc, char* argv[]){
        exit(2);
      }
      for(type=0;type<PART_TYPES;type++)
+     {
        tot_npart[type]+=headers[file].npart[type];
+       if(mass[type]!=headers[file].mass[type])
+       {
+         fprintf(stderr,"Error! Mass of particle %d from file 0 is %e, file %d has %e\n",type,mass[type],file,headers[file].mass[type]);
+         exit(2);
+       }
+     }
   }
-     fprintf(stderr, "Boxsize=%g, tot_npart=[%g,%g,%g,%g,%g,%g], redshift=%g\n",boxsize,cbrt(tot_npart[0]),cbrt(tot_npart[1]),cbrt(tot_npart[2]),cbrt(tot_npart[3]),cbrt(tot_npart[4]),cbrt(tot_npart[5]),redshift);
+  for(type=0;type<PART_TYPES;type++)
+  {
+    int tmp=2*nexttwo(cbrt(tot_npart[type]));
+    field_dims=MAX(field_dims, MIN(tmp, FIELD_DIMS));
+  }
+  nrbins=floor(sqrt(3)*((field_dims+1.0)/2.0)+1);
+     fprintf(stderr, "Boxsize=%g, ",boxsize);
+     fprintf(stderr, "tot_npart=[%g,%g,%g,%g,%g,%g], ",cbrt(tot_npart[0]),cbrt(tot_npart[1]),cbrt(tot_npart[2]),cbrt(tot_npart[3]),cbrt(tot_npart[4]),cbrt(tot_npart[5]));
+     fprintf(stderr, "redshift=%g, Ω_M=%g Ω_B=%g\n",redshift,headers[0].Omega0,mass[0]/tot_mass*headers[0].Omega0);
+
   /*Now read the particle data.*/
   for(type=0; type<PART_TYPES; type++)
   {
     if(tot_npart[type]==0)
       continue;
-    /* Definitely a faster bitshifting way to do this. */
-    int tmp=2*nexttwo(cbrt(tot_npart[type]));
-    field_dims=(tmp < FIELD_DIMS ? tmp : FIELD_DIMS);
-    nrbins[type]=floor(sqrt(3)*((field_dims+1.0)/2.0)+1);
     /* Allocating a bit more memory allows us to do in-place transforms.*/
     field=malloc(2*field_dims*field_dims*(field_dims/2+1)*sizeof(float));
     if(!field)
@@ -125,23 +147,44 @@ int main(char argc, char* argv[]){
       fieldize(boxsize,field_dims,field,tot_npart[type],npart,pos, 1);
       free(pos);
     }
-    power[type]=malloc(nrbins[type]*sizeof(float));
-    count[type]=malloc(nrbins[type]*sizeof(float));
-    keffs[type]=malloc(nrbins[type]*sizeof(float));
+    power[type]=malloc(nrbins*sizeof(float));
+    count[type]=malloc(nrbins*sizeof(float));
+    keffs[type]=malloc(nrbins*sizeof(float));
     if(!power[type] || !count[type] || !keffs[type])
     {
   		fprintf(stderr,"Error allocating memory for power spectrum.\n");
   		exit(1);
     }
-    nrbins[type]=powerspectrum(field_dims,field,nrbins[type], power[type],count[type],keffs[type]);
+    nrbins=powerspectrum(field_dims,field,nrbins, power[type],count[type],keffs[type]);
     free(field);
     fprintf(stderr, "Type %d done\n",type);
   }
-  /*Only print out DM particles for now*/
-  for(int i=0;i<nrbins[0];i++)
+  tot_power=malloc(nrbins*sizeof(float));
+  tot_keffs=malloc(nrbins*sizeof(float));
+  if(!tot_keffs || !tot_power)
   {
-    if(count[0][i])
-      printf("%e\t%e\t%e\n",keffs[0][i],power[0][i],count[0][i]);
+ 	 fprintf(stderr,"Error allocating memory for power spectrum.\n");
+    exit(1);
+  }
+  /*Calculate total power*/
+  for(int i=0; i<nrbins; i++)
+  {
+      tot_power[i]=0;
+      tot_keffs[i]=0;
+      for(int t=0; t<PART_TYPES; t++){
+         tot_power[i]+=mass[t]*power[t][i];
+         tot_keffs[i]+=mass[t]*keffs[t][i];
+      }
+      tot_power[i]/=tot_mass;
+      tot_keffs[i]/=tot_mass;
+  }
+  /*Print total power. Note use the count from the DM particles, because 
+   * they dominate the modes. I'm not sure the sample variance 
+   * really decreases by a factor of two from adding a subdominant baryon component.*/
+  for(int i=0;i<nrbins;i++)
+  {
+    if(count[1][i])
+      printf("%e\t%e\t%e\n",tot_keffs[i],tot_power[i],count[1][i]);
   }
   for(type=0; type<PART_TYPES; type++)
   {
@@ -152,6 +195,8 @@ int main(char argc, char* argv[]){
      free(keffs[type]);
     }
   }
+  free(tot_power);
+  free(tot_keffs);
   return 0;
 }
 
