@@ -10,7 +10,7 @@ int nexttwo(int);
 int main(char argc, char* argv[]){
   int field_dims=0;
   int old =0, type;
-  int tot_npart[PART_TYPES],nrbins;
+  int64_t tot_npart[PART_TYPES],nrbins;
   double mass[PART_TYPES],tot_mass;
   int nfiles=1, file;
   struct gadget_header *headers;
