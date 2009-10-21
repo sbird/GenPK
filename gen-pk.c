@@ -1,5 +1,9 @@
-#include "gen-pk.h"
+#define _GNU_SOURCE
+#include <string.h>
 #include <limits.h>
+#include "gen-pk.h"
+#include <math.h>
+
 /* In practice this means we need just over 4GB, as sizeof(float)=4*/
 #define FIELD_DIMS 1024
 #define PART_TYPES 6
@@ -16,12 +20,12 @@ int main(char argc, char* argv[]){
   struct gadget_header *headers;
   double boxsize, redshift;
   float *pos, *power[PART_TYPES], *count[PART_TYPES], *keffs[PART_TYPES];
-  float *tot_power,*tot_keffs;
+/*   float *tot_power,*tot_keffs; */
   float *field;
   FILE *fd;
   if(argc<3)
   {
-			 fprintf(stderr,"Usage: NumFiles filenames\n");
+			 fprintf(stderr,"Usage: NumFiles filenames outdir\n");
 			 exit(0);
   }
   //Assume single argument is a single file.
@@ -32,7 +36,7 @@ int main(char argc, char* argv[]){
 //      old=1;
   //Otherwise we want to read files in sequence.
   nfiles=atoi(argv[1]);
-  if(nfiles < 1 || nfiles > argc-2)
+  if(nfiles < 1 || nfiles > argc-3)
   {
 		 fprintf(stderr,"Filenames don't match number of files specified.\n");
 		 exit(0);
@@ -46,7 +50,7 @@ int main(char argc, char* argv[]){
   /*First read all the headers, allocate some memory and work out the totals.*/
   for(file=0; file<nfiles; file++)
   {
-     fd=fopen(argv[2],"r");
+     fd=fopen(argv[2+file],"r");
      if(!fd)
      {
    		fprintf(stderr,"Error opening file %s for reading!\n", argv[2]);
@@ -101,8 +105,8 @@ int main(char argc, char* argv[]){
   nrbins=floor(sqrt(3)*((field_dims+1.0)/2.0)+1);
      fprintf(stderr, "Boxsize=%g, ",boxsize);
      fprintf(stderr, "tot_npart=[%g,%g,%g,%g,%g,%g], ",cbrt(tot_npart[0]),cbrt(tot_npart[1]),cbrt(tot_npart[2]),cbrt(tot_npart[3]),cbrt(tot_npart[4]),cbrt(tot_npart[5]));
+     fprintf(stderr, "Masses=[%g %g %g %g %g %g], ",mass[0],mass[1],mass[2],mass[3],mass[4],mass[5]);
      fprintf(stderr, "redshift=%g, Ω_M=%g Ω_B=%g\n",redshift,headers[0].Omega0,mass[0]/tot_mass*headers[0].Omega0);
-
   /*Now read the particle data.*/
   for(type=0; type<PART_TYPES; type++)
   {
@@ -130,13 +134,19 @@ int main(char argc, char* argv[]){
     		fprintf(stderr,"Error allocating particle memory\n");
     		exit(1);
       }
-      if(read_gadget_float3(pos, "POS ",(type<0 ? 0 : headers[file].npart[type-1]) ,npart, fd,old) != npart)
+      int offset=(type==0 ? 0 : headers[file].npart[type-1]);
+      if(read_gadget_float3(pos, "POS ",offset ,npart, fd,old) != npart)
       {
     		fprintf(stderr, "Error reading particle data\n");
     		exit(1);
       }
       //By now we should have the data.
       fclose(fd);
+      /*Sanity check the data*/
+      for(int i=0; i<npart; i++)
+            if(fabs(pos[3*i]) > boxsize || fabs(pos[3*i+1]) > boxsize || fabs(pos[3*i+2]) > boxsize){
+                    fprintf(stderr, "Part %d position is at [%e,%e,%e]! Something is wrong!\n",i,pos[3*i],pos[3*i+1],pos[3*i+2]);
+            }
     /* Fieldize. positions should be an array of size 3*particles 
      * (like the output of read_gadget_float3)
      * out is an array of size [dims*dims*dims]
@@ -156,36 +166,66 @@ int main(char argc, char* argv[]){
   		exit(1);
     }
     nrbins=powerspectrum(field_dims,field,nrbins, power[type],count[type],keffs[type]);
+
     free(field);
-    fprintf(stderr, "Type %d done\n",type);
   }
-  tot_power=malloc(nrbins*sizeof(float));
+/*   tot_power=malloc(nrbins*sizeof(float));
   tot_keffs=malloc(nrbins*sizeof(float));
   if(!tot_keffs || !tot_power)
   {
  	 fprintf(stderr,"Error allocating memory for power spectrum.\n");
     exit(1);
-  }
+   } */
   /*Calculate total power*/
-  for(int i=0; i<nrbins; i++)
-  {
+/*   for(int i=0; i<nrbins; i++)  {
       tot_power[i]=0;
       tot_keffs[i]=0;
       for(int t=0; t<PART_TYPES; t++){
-         tot_power[i]+=mass[t]*power[t][i];
-         tot_keffs[i]+=mass[t]*keffs[t][i];
+         if(tot_npart[t]){
+            tot_power[i]+=mass[t]*power[t][i];
+            tot_keffs[i]+=mass[t]*keffs[t][i];
+         }
       }
       tot_power[i]/=tot_mass;
       tot_keffs[i]/=tot_mass;
-  }
-  /*Print total power. Note use the count from the DM particles, because 
+    } */
+  /*Print power. Note use the count from the DM particles, because 
    * they dominate the modes. I'm not sure the sample variance 
    * really decreases by a factor of two from adding a subdominant baryon component.*/
+
+  char *filename;
+  int totfil=strlen(argv[argc-1])+strlen(basename(argv[2]))+10;
+  if(!(filename=malloc(totfil*sizeof(char)))){
+       fprintf(stderr,"Error allocating string memory\n");
+       exit(1);
+  }
+  strcpy(filename,argv[argc-1]);
+  strcat(filename,"/PK-by-");
+  strcat(filename,basename(argv[2]));
+  if(!(fd=fopen(filename, "w"))){
+     fprintf(stderr,"Error opening file: %s\n",filename);
+     exit(1);
+  }
+  for(int i=0;i<nrbins;i++)
+  {
+    if(count[0][i])
+/*       printf("%e\t%e\t%e\n",tot_keffs[i],tot_power[i],count[1][i]); */
+      fprintf(fd,"%e\t%e\t%e\n",keffs[0][i],power[0][i],count[0][i]);
+  }
+  fclose(fd);
+  strcpy(filename,argv[argc-1]);
+  strcat(filename,"/PK-DM-");
+  strcat(filename,basename(argv[2]));
+  if(!(fd=fopen(filename, "w"))){
+     fprintf(stderr,"Error opening file: %s\n",filename);
+     exit(1);
+  }
   for(int i=0;i<nrbins;i++)
   {
     if(count[1][i])
-      printf("%e\t%e\t%e\n",tot_keffs[i],tot_power[i],count[1][i]);
+      fprintf(fd,"%e\t%e\t%e\n",keffs[1][i],power[1][i],count[1][i]);
   }
+  fclose(fd);
   for(type=0; type<PART_TYPES; type++)
   {
     if(tot_npart[type])
@@ -195,8 +235,8 @@ int main(char argc, char* argv[]){
      free(keffs[type]);
     }
   }
-  free(tot_power);
-  free(tot_keffs);
+/*   free(tot_power); */
+/*   free(tot_keffs); */
   return 0;
 }
 
