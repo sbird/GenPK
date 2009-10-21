@@ -146,9 +146,9 @@ int read_gadget_head(struct gadget_header *out_header, FILE *fd, int old)
 		 my_fread(&header, sizeof(header), 1, fd);
 	#ifdef MY_DEBUG
 		 fprintf(stderr, "npart=%d %d %d %d %d %d\n", header.npart[0],header.npart[1],header.npart[2],header.npart[3], header.npart[4], header.npart[5]);
-		 fprintf(stderr, "header.mass=%d %d %d %d %d %d\n", header.mass[0],header.mass[1],header.mass[2],header.mass[3], header.mass[4], header.mass[5]);
-		 fprintf(stderr, "time=%e\n",header.time);
-		 fprintf(stderr, "redshift=%e\n",header.redshift);
+		 fprintf(stderr, "header.mass=%f %f %f %f %f %f\n", header.mass[0],header.mass[1],header.mass[2],header.mass[3], header.mass[4], header.mass[5]);
+		 fprintf(stderr, "time=%f\n",header.time);
+		 fprintf(stderr, "redshift=%g\n",header.redshift);
 		 fprintf(stderr, "flag_sfr=%d\n",header.flag_sfr);
 		 fprintf(stderr, "flag_feedback=%d\n",header.flag_feedback);
 		 fprintf(stderr, "header.npartTotal=%d %d %d %d %d %d\n", header.npartTotal[0],header.npartTotal[1],header.npartTotal[2],header.npartTotal[3], header.npartTotal[4], header.npartTotal[5]);
@@ -203,7 +203,7 @@ int64_t read_gadget_float(float *data,char *label,FILE *fd)
 /*-----------------------------------------------------------------------------*/
 int64_t read_gadget_float3(float *data,char *label,int offset, int number, FILE *fd, int old)
 {
-  int64_t blocksize,i;
+  int blocksize,i;
 
   if(!old)
     blocksize = find_block(fd,label);
@@ -222,8 +222,8 @@ int64_t read_gadget_float3(float *data,char *label,int offset, int number, FILE 
        fprintf(stderr,"Reading %d bytes of data from <%s>...\n",blocksize,label);
 #endif
        SKIP;
-       if(offset)
-          fseek(fd,offset,SEEK_CUR);
+       if(offset>0)
+          fseek(fd,3*offset*sizeof(float),SEEK_CUR);
        my_fread(data,blocksize, 1, fd);
        swap_Nbyte((char*)data,blocksize/sizeof(float),4);
 #ifdef MY_DEBUG
