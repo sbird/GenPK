@@ -11,7 +11,7 @@ int nexttwo(int);
 #define MAX(x,y) ((x) > (y) ? (x) :(y))
 #define MIN(x,y) ((x) < (y) ? (x) :(y))
 
-int main(char argc, char* argv[]){
+int main(int argc, char* argv[]){
   int field_dims=0;
   int old =0, type;
   int64_t tot_npart[PART_TYPES],nrbins;

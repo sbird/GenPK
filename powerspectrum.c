@@ -23,7 +23,7 @@ int powerspectrum(int dims, float *field, int nrbins, float *power, float *count
 	const float bwth=1.0/(2.0*binsperunit);
 	if(sizeof(fftw_real) != sizeof(float))
 	{
-		fprintf(stderr, "sizeof fftw_real:%d fftw_complex: %d, float: %d\n",sizeof(fftw_real), sizeof(fftw_complex), sizeof(float));
+		fprintf(stderr, "sizeof fftw_real:%ld fftw_complex: %ld, float: %ld\n",sizeof(fftw_real), sizeof(fftw_complex), sizeof(float));
 		fprintf(stderr, "fftw_real is not a float. Perhaps you linked the wrong library?\n");
 		exit(1);
 	}

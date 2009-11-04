@@ -29,7 +29,7 @@ size_t my_fread(void *ptr, size_t size, size_t nmemb, FILE * stream)
 
   if((nread = fread(ptr, size, nmemb, stream)) != nmemb)
     {
-      fprintf(stderr, "fread error: %d = fread(%d %d %d file)!\n",nread,ptr,size,nmemb);
+      fprintf(stderr, "fread error: %ld = fread(%p %ld %ld file)!\n",nread,ptr,size,nmemb);
       exit(3);
     }
   return nread;
@@ -128,7 +128,7 @@ int64_t find_block(FILE *fd,char *label)
 /*-----------------------------------------------------------------------------*/
 int read_gadget_head(struct gadget_header *out_header, FILE *fd, int old)
 {
-  int blocksize,dummysize,i;
+  int blocksize;
   if(!old)
     blocksize = find_block(fd,"HEAD");
   else{
@@ -203,7 +203,7 @@ int64_t read_gadget_float(float *data,char *label,FILE *fd)
 /*-----------------------------------------------------------------------------*/
 int64_t read_gadget_float3(float *data,char *label,int offset, int number, FILE *fd, int old)
 {
-  int blocksize,i;
+  int blocksize;
 
   if(!old)
     blocksize = find_block(fd,label);
