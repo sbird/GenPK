@@ -7,6 +7,8 @@
 /* In practice this means we need just over 4GB, as sizeof(float)=4*/
 #define FIELD_DIMS 1024
 #define PART_TYPES 6
+/*Which particle type to use for stars, which are just another kind of baryon*/
+#define STARS 4
 int nexttwo(int);
 #define MAX(x,y) ((x) > (y) ? (x) :(y))
 #define MIN(x,y) ((x) < (y) ? (x) :(y))
@@ -108,6 +110,9 @@ int main(int argc, char* argv[]){
      fprintf(stderr, "Masses=[%g %g %g %g %g %g], ",mass[0],mass[1],mass[2],mass[3],mass[4],mass[5]);
      fprintf(stderr, "redshift=%g, Ω_M=%g Ω_B=%g\n",redshift,headers[0].Omega0,mass[0]/tot_mass*headers[0].Omega0);
   /*Now read the particle data.*/
+  /* Type 4 particles (stars) are treated as just another type of baryon*/
+  tot_npart[0]+=tot_npart[STARS];
+  tot_npart[STARS]=0;
   for(type=0; type<PART_TYPES; type++)
   {
     if(tot_npart[type]==0)
@@ -122,28 +127,44 @@ int main(int argc, char* argv[]){
     for(file=0; file<nfiles; file++)
     {
       int npart=headers[file].npart[type];
+      /*Add the stars*/
+      int nstar=0;
+      int offset=0;
+      if(type==0)
+         nstar=headers[file].npart[STARS];
       fd=fopen(argv[file+2],"r");
       if(!fd)
       {
         	fprintf(stderr,"Error opening file %s for reading!\n", argv[file+2]);
         	exit(1);
       }
-      pos=malloc(3*(npart+1)*sizeof(float));
+      pos=malloc(3*(npart+nstar+1)*sizeof(float));
       if(!pos)
       {
     		fprintf(stderr,"Error allocating particle memory\n");
     		exit(1);
       }
-      int offset=(type==0 ? 0 : headers[file].npart[type-1]);
+      for(int i=0; i<type; i++)
+              offset+=headers[file].npart[i];
       if(read_gadget_float3(pos, "POS ",offset ,npart, fd,old) != npart)
       {
     		fprintf(stderr, "Error reading particle data\n");
     		exit(1);
       }
+      /*Read stars as well. Note past this point no distinction is made between stars and baryons.*/
+      if(type==0 && nstar>0){
+         for(int i=0; i<STARS; i++)
+              offset+=headers[file].npart[i];
+         if(read_gadget_float3(pos+3*npart, "POS ",offset ,nstar, fd,old) != nstar)
+         {
+       		fprintf(stderr, "Error reading star data\n");
+    		   exit(1);
+         }
+      }
       //By now we should have the data.
       fclose(fd);
       /*Sanity check the data*/
-      for(int i=0; i<npart; i++)
+      for(int i=0; i<npart+nstar; i++)
             if(fabs(pos[3*i]) > boxsize || fabs(pos[3*i+1]) > boxsize || fabs(pos[3*i+2]) > boxsize){
                     fprintf(stderr, "Part %d position is at [%e,%e,%e]! Something is wrong!\n",i,pos[3*i],pos[3*i+1],pos[3*i+2]);
             }
