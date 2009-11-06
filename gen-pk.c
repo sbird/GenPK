@@ -153,6 +153,7 @@ int main(int argc, char* argv[]){
       }
       /*Read stars as well. Note past this point no distinction is made between stars and baryons.*/
       if(type==0 && nstar>0){
+         offset=0;
          for(int i=0; i<STARS; i++)
               offset+=headers[file].npart[i];
          if(read_gadget_float3(pos+3*npart, "POS ",offset ,nstar, fd,old) != nstar)
@@ -175,7 +176,7 @@ int main(int argc, char* argv[]){
      * is about to be handed to an FFTW in-place routine, 
      * and set skip the last 2 places of the each row in the last dimension
      */
-      fieldize(boxsize,field_dims,field,tot_npart[type],npart,pos, 1);
+      fieldize(boxsize,field_dims,field,tot_npart[type],npart+nstar,pos, 1);
       free(pos);
     }
     power[type]=malloc(nrbins*sizeof(float));

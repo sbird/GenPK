@@ -30,7 +30,8 @@ int fieldize(double boxsize, int dims, float *out, int total_particles, int segm
 	{
 		float dx[3],tx[3], x[3], temp[IL][8];
 		int fx[3],nex[3],temp2[IL][8];
-		for(int k=0; k<IL; k++)
+      int il=(index+IL<segment_particles ? IL : segment_particles-index);
+		for(int k=0; k<il; k++)
 		{
 			for(int i=0; i<3; i++)
 			{
@@ -64,7 +65,7 @@ int fieldize(double boxsize, int dims, float *out, int total_particles, int segm
 		*to ensure synchronisation.*/
 			#pragma omp critical 
 		{
-		for(int k=0; k<IL; k++)
+		for(int k=0; k<il; k++)
 		{
 			out[temp2[k][0]]+=temp[k][0];
 			out[temp2[k][1]]+=temp[k][1];
