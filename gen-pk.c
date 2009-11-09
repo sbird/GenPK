@@ -221,33 +221,39 @@ int main(int argc, char* argv[]){
        fprintf(stderr,"Error allocating string memory\n");
        exit(1);
   }
-  strcpy(filename,argv[argc-1]);
-  strcat(filename,"/PK-by-");
-  strcat(filename,basename(argv[2]));
-  if(!(fd=fopen(filename, "w"))){
-     fprintf(stderr,"Error opening file: %s\n",filename);
-     exit(1);
+  /*Print out a baryon P(k) if there are any baryons*/
+  if(tot_npart[0]){
+     strcpy(filename,argv[argc-1]);
+     strcat(filename,"/PK-by-");
+     strcat(filename,basename(argv[2]));
+     if(!(fd=fopen(filename, "w"))){
+        fprintf(stderr,"Error opening file: %s\n",filename);
+        exit(1);
+     }
+     for(int i=0;i<nrbins;i++)
+     {
+       if(count[0][i])
+   /*       printf("%e\t%e\t%e\n",tot_keffs[i],tot_power[i],count[1][i]); */
+         fprintf(fd,"%e\t%e\t%e\n",keffs[0][i],power[0][i],count[0][i]);
+     }
+     fclose(fd);
   }
-  for(int i=0;i<nrbins;i++)
-  {
-    if(count[0][i])
-/*       printf("%e\t%e\t%e\n",tot_keffs[i],tot_power[i],count[1][i]); */
-      fprintf(fd,"%e\t%e\t%e\n",keffs[0][i],power[0][i],count[0][i]);
+  /*Print out a DM P(k) if there is any DM*/
+  if(tot_npart[1]){
+     strcpy(filename,argv[argc-1]);
+     strcat(filename,"/PK-DM-");
+     strcat(filename,basename(argv[2]));
+     if(!(fd=fopen(filename, "w"))){
+        fprintf(stderr,"Error opening file: %s\n",filename);
+        exit(1);
+     }
+     for(int i=0;i<nrbins;i++)
+     {
+       if(count[1][i])
+         fprintf(fd,"%e\t%e\t%e\n",keffs[1][i],power[1][i],count[1][i]);
+     }
+     fclose(fd);
   }
-  fclose(fd);
-  strcpy(filename,argv[argc-1]);
-  strcat(filename,"/PK-DM-");
-  strcat(filename,basename(argv[2]));
-  if(!(fd=fopen(filename, "w"))){
-     fprintf(stderr,"Error opening file: %s\n",filename);
-     exit(1);
-  }
-  for(int i=0;i<nrbins;i++)
-  {
-    if(count[1][i])
-      fprintf(fd,"%e\t%e\t%e\n",keffs[1][i],power[1][i],count[1][i]);
-  }
-  fclose(fd);
   for(type=0; type<PART_TYPES; type++)
   {
     if(tot_npart[type])
