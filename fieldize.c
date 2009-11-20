@@ -22,9 +22,9 @@ int fieldize(double boxsize, int dims, float *out, int total_particles, int segm
 #pragma omp parallel
 	{
 	#pragma omp for schedule(static, 1024)
-	for(int i=0; i<dims2; i+=fdims)
+	for(int i=0; i<dims*dims; i++)
 		for(int j=0; j<dims;j++)
-				out[i+j]=-1;
+				out[fdims*i+j]=-1;
 	#pragma omp for schedule(static, 4096) nowait
 	for(int index=0;index<segment_particles;index+=IL)
 	{

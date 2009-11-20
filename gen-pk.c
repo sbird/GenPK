@@ -247,6 +247,7 @@ int main(int argc, char* argv[]){
         fprintf(stderr,"Error opening file: %s\n",filename);
         exit(1);
      }
+   free(filename);
      for(int i=0;i<nrbins;i++)
      {
        if(count[1][i])
@@ -263,6 +264,7 @@ int main(int argc, char* argv[]){
      free(keffs[type]);
     }
   }
+  free(headers);
 /*   free(tot_power); */
 /*   free(tot_keffs); */
   return 0;
