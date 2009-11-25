@@ -118,7 +118,7 @@ int main(int argc, char* argv[]){
     if(tot_npart[type]==0)
       continue;
     /* Allocating a bit more memory allows us to do in-place transforms.*/
-    field=malloc(2*field_dims*field_dims*(field_dims/2+1)*sizeof(float));
+    field=calloc(2*field_dims*field_dims*(field_dims/2+1),sizeof(float));
     if(!field)
     {
   		fprintf(stderr,"Error allocating memory for field\n");

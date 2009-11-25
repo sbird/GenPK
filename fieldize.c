@@ -22,11 +22,6 @@ int fieldize(double boxsize, int dims, float *out, int total_particles, int segm
 	/* This is one over density.*/
 #pragma omp parallel
 	{
-/* This only affects the average density, so don't bother.*/
-/* 	#pragma omp for schedule(static, 1024) */
-/* 	for(int i=0; i<dims*dims; i++) */
-/* 		for(int j=0; j<dims*dims2;j++) */
-/* 				out[j]=-1; */
 	#pragma omp for schedule(static, 4096) nowait
 	for(int index=0;index<segment_particles;index+=IL)
 	{
