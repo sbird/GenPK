@@ -25,8 +25,7 @@ struct gadget_header
   double   HubbleParam;
   int      flag_stellarage;
   int      flag_metals;
-  char     fill[88];  /* fills to 256 Bytes
- */
+  char     fill[88];  /* fills to 256 Bytes */
 };
 
 extern void swap_Nbyte(char *data,int n,int m);

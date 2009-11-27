@@ -110,7 +110,7 @@ int main(int argc, char* argv[]){
      fprintf(stderr, "Masses=[%g %g %g %g %g %g], ",mass[0],mass[1],mass[2],mass[3],mass[4],mass[5]);
      fprintf(stderr, "redshift=%g, Ω_M=%g Ω_B=%g\n",redshift,headers[0].Omega0,mass[0]/tot_mass*headers[0].Omega0);
   /*Now read the particle data.*/
-  /* Type 4 particles (stars) are treated as just another type of baryon*/
+  /*Type 4 particles (stars) are treated as just another type of baryon*/
   tot_npart[0]+=tot_npart[STARS];
   tot_npart[STARS]=0;
   for(type=0; type<PART_TYPES; type++)
@@ -191,26 +191,6 @@ int main(int argc, char* argv[]){
 
     free(field);
   }
-/*   tot_power=malloc(nrbins*sizeof(float));
-  tot_keffs=malloc(nrbins*sizeof(float));
-  if(!tot_keffs || !tot_power)
-  {
- 	 fprintf(stderr,"Error allocating memory for power spectrum.\n");
-    exit(1);
-   } */
-  /*Calculate total power*/
-/*   for(int i=0; i<nrbins; i++)  {
-      tot_power[i]=0;
-      tot_keffs[i]=0;
-      for(int t=0; t<PART_TYPES; t++){
-         if(tot_npart[t]){
-            tot_power[i]+=mass[t]*power[t][i];
-            tot_keffs[i]+=mass[t]*keffs[t][i];
-         }
-      }
-      tot_power[i]/=tot_mass;
-      tot_keffs[i]/=tot_mass;
-    } */
   /*Print power. Note use the count from the DM particles, because 
    * they dominate the modes. I'm not sure the sample variance 
    * really decreases by a factor of two from adding a subdominant baryon component.*/
@@ -233,7 +213,6 @@ int main(int argc, char* argv[]){
      for(int i=0;i<nrbins;i++)
      {
        if(count[0][i])
-   /*       printf("%e\t%e\t%e\n",tot_keffs[i],tot_power[i],count[1][i]); */
          fprintf(fd,"%e\t%e\t%e\n",keffs[0][i],power[0][i],count[0][i]);
      }
      fclose(fd);
@@ -265,8 +244,6 @@ int main(int argc, char* argv[]){
     }
   }
   free(headers);
-/*   free(tot_power); */
-/*   free(tot_keffs); */
   return 0;
 }
 
