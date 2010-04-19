@@ -1,11 +1,11 @@
-PRO=-pg
+PRO=#-pg
 OF=
 #-DOLD_FORMAT
-CC=gcc -O3 -g -Wall -c -std=gnu99 -fopenmp $(OF) $(PRO)
-LINK=gcc -lm -lsrfftw_threads -lsfftw_threads -lsrfftw -lsfftw -lpthread -lgomp -L/data/store/spb41/apps/fftw/lib $(PRO)
+#CC=gcc -O3 -g -Wall -c -std=gnu99 -fopenmp $(OF) $(PRO)
+#LINK=gcc -lm -lsrfftw_threads -lsfftw_threads -lsrfftw -lsfftw -lpthread -lgomp -L/data/store/spb41/apps/fftw/lib $(PRO)
 # icc; segfaults or fails to read.
-#CC=icc -O2 -g -c -c99
-#LINK=icc -lm -lsrfftw_threads -lsfftw_threads -lsrfftw -lsfftw -lpthread -L/data/store/spb41/apps/fftw/lib $(PRO)
+CC=icc -O2 -g -c -std=c99 -openmp
+LINK=icc -openmp -lsrfftw_threads -lsfftw_threads -lsrfftw -lsfftw -lpthread -L/data/store/spb41/apps/fftw/lib $(PRO)
 .PHONY:all love clean
 all:gen-pk
 gen-pk:powerspectrum.o fieldize.o readgadget.o gen-pk.c gen-pk.h
