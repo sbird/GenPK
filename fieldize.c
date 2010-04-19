@@ -24,6 +24,10 @@
 #include <stdint.h>
 #define IL 16
 
+#ifndef M_PI
+        #define M_PI 3.1415926535897932384626433832795
+#endif
+
 int fieldize(double boxsize, int dims, float *out, int total_particles, int segment_particles, float *positions,int extra)
 {
 	const int dims3=pow(dims,3);
