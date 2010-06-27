@@ -33,7 +33,7 @@ int main(int argc, char* argv[]){
   int old =0, type;
   int64_t tot_npart[PART_TYPES],nrbins;
   double mass[PART_TYPES],tot_mass;
-  int nfiles=1, file;
+  int nfiles=0, file;
   struct gadget_header *headers;
   double boxsize, redshift;
   float *pos, *power[PART_TYPES], *count[PART_TYPES], *keffs[PART_TYPES];
@@ -43,25 +43,31 @@ int main(int argc, char* argv[]){
 /*   float *tot_power,*tot_keffs; */
   float *field;
   FILE *fd;
-  while((c = getopt(argc, argv, "o:i:h1")) !=-1)
+  while((c = getopt(argc, argv, ":o:h1")) !=-1)
   {
     switch(c)
       {
         case 'o':
            outdir=optarg;
            break;
-        case 'i':
-           nfiles=optind-1;
-           infiles=malloc(sizeof(char *)*(nfiles));
-           for(file=0; file < nfiles; file++)
-                   infiles[file]=optarg+file;
-           break;
         case '1':
+           fprintf(stderr, "Attempting to read format 1 file\n");
            old=1;
            break;
         case 'h':
         case '?':
-           help();
+         /* Parse the -i option ourselves, as getopt doesn't do this easily*/
+         if(optopt == 'i'){
+           for(file=optind;file<argc;file++,nfiles++)
+                if((argv[file])[0] == '-')
+                        break;
+           infiles=malloc(sizeof(char *)*(nfiles));
+           for(file=0; file < nfiles; file++)
+                   infiles[file]=argv[file+optind];
+           break;
+         }
+         fprintf(stderr, "Unrecognised option: %c arg %d\n",optopt,optind);
+         help();
         default:
            exit(1);
       }
