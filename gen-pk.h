@@ -38,5 +38,6 @@ float invwindow(int kx, int ky, int kz, int n);
  * So need 2*dims*dims*(dims/2+1) float space.
  * Need at least floor(sqrt(3)*abs((dims+1.0)/2.0)+1) values in power and count.*/
 int powerspectrum(int dims, fftw_real *field, int nrbins, float *power, float *count, float *keffs);
+void help(void);
 
 #endif
