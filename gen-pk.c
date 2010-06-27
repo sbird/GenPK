@@ -160,6 +160,7 @@ int main(int argc, char* argv[]){
       }
       for(int i=0; i<type; i++)
               offset+=headers[file].npart[i];
+      if(old) fseek(fd,sizeof(struct gadget_header)+2*sizeof(int),SEEK_CUR);
       if(read_gadget_float3(pos, "POS ",offset ,npart, fd,old) != npart)
       {
     		fprintf(stderr, "Error reading particle data\n");
