@@ -234,7 +234,7 @@ int main(int argc, char* argv[]){
   }
   /*Print out a baryon P(k) if there are any baryons*/
   if(tot_npart[0]){
-     snprintf(filename,totfil,"%s/PK-by-%s",outdir,infiles[0]);
+     snprintf(filename,totfil,"%s/PK-by-%s",outdir,basename(infiles[0]));
      if(!(fd=fopen(filename, "w"))){
         fprintf(stderr,"Error opening file: %s\n",filename);
         exit(1);
@@ -248,7 +248,7 @@ int main(int argc, char* argv[]){
   }
   /*Print out a DM P(k) if there is any DM*/
   if(tot_npart[1]){
-     snprintf(filename,totfil,"%s/PK-DM-%s",outdir,infiles[0]);
+     snprintf(filename,totfil,"%s/PK-DM-%s",outdir,basename(infiles[0]));
      if(!(fd=fopen(filename, "w"))){
         fprintf(stderr,"Error opening file: %s\n",filename);
         exit(1);
