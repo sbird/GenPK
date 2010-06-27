@@ -15,6 +15,7 @@
 #define _GNU_SOURCE
 #include <string.h>
 #include <limits.h>
+#include <unistd.h>
 #include "gen-pk.h"
 #include <math.h>
 
@@ -36,27 +37,36 @@ int main(int argc, char* argv[]){
   struct gadget_header *headers;
   double boxsize, redshift;
   float *pos, *power[PART_TYPES], *count[PART_TYPES], *keffs[PART_TYPES];
+  char *outdir=NULL;
+  char **infiles=NULL;
+  char c;
 /*   float *tot_power,*tot_keffs; */
   float *field;
   FILE *fd;
-  if(argc<3)
+  while((c = getopt(argc, argv, "o:i:h1")) !=-1)
   {
-			 fprintf(stderr,"Usage: NumFiles filenames outdir\n");
-			 exit(0);
+    switch(c)
+      {
+        case 'o':
+           outdir=optarg;
+           break;
+        case 'i':
+           nfiles=optind-1;
+           infiles=malloc(sizeof(char *)*(nfiles));
+           for(file=0; file < nfiles; file++)
+                   infiles[file]=optarg+file;
+           break;
+        case '1':
+           old=1;
+           break;
+        case 'h':
+        case '?':
+           help();
+        default:
+           exit(1);
+      }
   }
-  //Assume single argument is a single file.
-//  if(argc==2)
-//         *fd=fopen(argv[1],"r");
-  //Don't support old switch any more. Makes it more complicated.
-//  if(argc==3 && (atoi(argc[argc-1])==1))
-//      old=1;
-  //Otherwise we want to read files in sequence.
-  nfiles=atoi(argv[1]);
-  if(nfiles < 1 || nfiles > argc-3)
-  {
-		 fprintf(stderr,"Filenames don't match number of files specified.\n");
-		 exit(0);
-  }
+  //Read headers
   headers=malloc(nfiles*sizeof(struct gadget_header));
   if(!headers)
   {
@@ -66,10 +76,10 @@ int main(int argc, char* argv[]){
   /*First read all the headers, allocate some memory and work out the totals.*/
   for(file=0; file<nfiles; file++)
   {
-     fd=fopen(argv[2+file],"r");
+     fd=fopen(infiles[file],"r");
      if(!fd)
      {
-   		fprintf(stderr,"Error opening file %s for reading!\n", argv[2]);
+   		fprintf(stderr,"Error opening file %s for reading!\n", infiles[file]);
    		exit(1);
      }
      if(!read_gadget_head(headers+file, fd, old))
@@ -146,10 +156,10 @@ int main(int argc, char* argv[]){
       int offset=0;
       if(type==0)
          nstar=headers[file].npart[STARS];
-      fd=fopen(argv[file+2],"r");
+      fd=fopen(infiles[file],"r");
       if(!fd)
       {
-        	fprintf(stderr,"Error opening file %s for reading!\n", argv[file+2]);
+        	fprintf(stderr,"Error opening file %s for reading!\n", infiles[file]);
         	exit(1);
       }
       pos=malloc(3*(npart+nstar+1)*sizeof(float));
@@ -211,16 +221,14 @@ int main(int argc, char* argv[]){
    * really decreases by a factor of two from adding a subdominant baryon component.*/
 
   char *filename;
-  int totfil=strlen(argv[argc-1])+strlen(basename(argv[2]))+10;
+  int totfil=strlen(outdir)+strlen(basename(infiles[0]))+10;
   if(!(filename=malloc(totfil*sizeof(char)))){
        fprintf(stderr,"Error allocating string memory\n");
        exit(1);
   }
   /*Print out a baryon P(k) if there are any baryons*/
   if(tot_npart[0]){
-     strcpy(filename,argv[argc-1]);
-     strcat(filename,"/PK-by-");
-     strcat(filename,basename(argv[2]));
+     snprintf(filename,totfil,"%s/PK-by-%s",outdir,infiles[0]);
      if(!(fd=fopen(filename, "w"))){
         fprintf(stderr,"Error opening file: %s\n",filename);
         exit(1);
@@ -234,9 +242,7 @@ int main(int argc, char* argv[]){
   }
   /*Print out a DM P(k) if there is any DM*/
   if(tot_npart[1]){
-     strcpy(filename,argv[argc-1]);
-     strcat(filename,"/PK-DM-");
-     strcat(filename,basename(argv[2]));
+     snprintf(filename,totfil,"%s/PK-DM-%s",outdir,infiles[0]);
      if(!(fd=fopen(filename, "w"))){
         fprintf(stderr,"Error opening file: %s\n",filename);
         exit(1);
@@ -281,4 +287,11 @@ int nexttwo(int n)
     for(i=1;i<sizeof(int)*CHAR_BIT; i<<=1)
        n |= n>>i;
     return ++n; 
+}
+
+void help()
+{
+           fprintf(stderr, "Usage: ./gen-pk -f NUMFILES -i filenames -o outdir\n"
+                           "-1 reads old format files\n");
+           return;
 }
