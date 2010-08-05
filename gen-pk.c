@@ -72,6 +72,7 @@ int main(int argc, char* argv[]){
            exit(1);
       }
   }
+  if(!outdir || !nfiles) help();
   //Read headers
   headers=malloc(nfiles*sizeof(struct gadget_header));
   if(!headers)
@@ -297,7 +298,7 @@ int nexttwo(int n)
 
 void help()
 {
-           fprintf(stderr, "Usage: ./gen-pk -f NUMFILES -i filenames -o outdir\n"
+           fprintf(stderr, "Usage: ./gen-pk -i filenames -o outdir\n"
                            "-1 reads old format files\n");
            return;
 }
