@@ -22,7 +22,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdint.h>
-#define IL 16
+#define IL 64
 
 #ifndef M_PI
         #define M_PI 3.1415926535897932384626433832795
@@ -38,9 +38,9 @@ int fieldize(double boxsize, int dims, float *out, int total_particles, int segm
 	const float invrho=dims3/(float)total_particles;
 	const float units=dims/boxsize;
 	/* This is one over density.*/
-#pragma omp parallel
+        #pragma omp parallel
 	{
-	#pragma omp for schedule(static, 4096) nowait
+	#pragma omp for schedule(static, 4096)
 	for(int index=0;index<segment_particles;index+=IL)
 	{
 		float dx[3],tx[3], x[3], temp[IL][8];
@@ -78,7 +78,7 @@ int fieldize(double boxsize, int dims, float *out, int total_particles, int segm
 		}
 		/*The store operation may only be done by one thread at a time, 
 		*to ensure synchronisation.*/
-			#pragma omp critical 
+		#pragma omp critical
 		{
 		for(int k=0; k<il; k++)
 		{
