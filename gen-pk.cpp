@@ -74,71 +74,71 @@ int main(int argc, char* argv[]){
   fprintf(stderr, "NPart=(%g,%g,%g,%g,%g,%g)**3, ",cbrt(snap.GetNpart(0)),cbrt(snap.GetNpart(1)),cbrt(snap.GetNpart(2)),cbrt(snap.GetNpart(3)),cbrt(snap.GetNpart(4)),cbrt(snap.GetNpart(5)));
   fprintf(stderr, "Masses=[%g %g %g %g %g %g], ",head.mass[0],head.mass[1],head.mass[2],head.mass[3],head.mass[4],head.mass[5]);
   fprintf(stderr, "redshift=%g, Ω_M=%g\n",head.redshift,head.Omega0);
-  /*Now read the particle data one type at a time into the field.*/
+  /*Now make a power spectrum for each particle type*/
   for(type=0; type<N_TYPE; type++)
   {
-    int64_t npart_read;
-    //Initially set it to skip all types
-    int skip_type=(1<<N_TYPE)-1;
-    /*Stars are another type of baryons*/
-    if(snap.GetNpart(type)==0 || type==STARS_TYPE)
-      continue;
-    /* Allocating a bit more memory allows us to do in-place transforms.*/
-    if(!(field=(float *)calloc(2*field_dims*field_dims*(field_dims/2+1),sizeof(float)))){
-  		fprintf(stderr,"Error allocating memory for field\n");
-  		exit(1);
-    }
-    /* Set skip_type, which should include every type *other* than the one we're interested in
-     * There are N_TYPE types, so skipping all types is 2^(N_TYPES)-1 and then subtract 2^type for 
-     * the one we're trying to read*/
-    npart_read=snap.GetNpart(type);
-    skip_type-=(1<<type);
-    /* Add the stars if we are using baryons. */
-    if(type==BARYON_TYPE){
-            npart_read+=snap.GetNpart(STARS_TYPE);
-            skip_type-=(1<<STARS_TYPE);
-    }
-    if(!(pos=(float *)malloc(3*(npart_read+1)*sizeof(float)))){
-      	fprintf(stderr,"Error allocating particle memory\n");
-      	exit(1);
-    }
-    if(snap.GetBlock("POS ",pos,npart_read,0,skip_type) != npart_read){
-      	fprintf(stderr, "Error reading particle data\n");
-      	exit(1);
-    }
-    /*Sanity check the data*/
-    for(int i=0; i<npart_read; i++)
-          if(fabs(pos[3*i]) > head.BoxSize || fabs(pos[3*i+1]) > head.BoxSize || fabs(pos[3*i+2]) > head.BoxSize){
-                  fprintf(stderr, "Part %d position is at [%e,%e,%e]! Something is wrong!\n",i,pos[3*i],pos[3*i+1],pos[3*i+2]);
-          }
-    /* Fieldize. positions should be an array of size 3*particles 
-     * (like the output of read_gadget_float3)
-     * out is an array of size [dims*dims*dims]
-     * the "extra" switch, if set to one, will assume that the output 
-     * is about to be handed to an FFTW in-place routine, 
-     * and set skip the last 2 places of the each row in the last dimension
-     */
-    fieldize(head.BoxSize,field_dims,field,snap.GetNpart(type),npart_read,pos, 1);
-    free(pos);
-    power[type]=(float *) malloc(nrbins*sizeof(float));
-    count[type]=(int *) malloc(nrbins*sizeof(int));
-    keffs[type]=(float *) malloc(nrbins*sizeof(float));
-    if(!power[type] || !count[type] || !keffs[type]){
-  		fprintf(stderr,"Error allocating memory for power spectrum.\n");
-  		exit(1);
-    }
-    nrbins=powerspectrum(field_dims,field,nrbins, power[type],count[type],keffs[type]);
-    free(field);
+        int64_t npart_read;
+        string filename=outdir;
+        size_t last=infiles.find_last_of("/\\");
+        //Initially set it to skip all types
+        int skip_type=(1<<N_TYPE)-1;
+        /*Stars are another type of baryons*/
+        if(snap.GetNpart(type)==0 || type==STARS_TYPE)
+          continue;
+        /* Allocating a bit more memory allows us to do in-place transforms.*/
+        if(!(field=(float *)calloc(2*field_dims*field_dims*(field_dims/2+1),sizeof(float)))){
+      		fprintf(stderr,"Error allocating memory for field\n");
+      		exit(1);
+        }
+        /* Set skip_type, which should include every type *other* than the one we're interested in
+         * There are N_TYPE types, so skipping all types is 2^(N_TYPES)-1 and then subtract 2^type for 
+         * the one we're trying to read*/
+        npart_read=snap.GetNpart(type);
+        skip_type-=(1<<type);
+        /* Add the stars if we are using baryons. */
+        if(type==BARYON_TYPE){
+                npart_read+=snap.GetNpart(STARS_TYPE);
+                skip_type-=(1<<STARS_TYPE);
+        }
+        if(!(pos=(float *)malloc(3*(npart_read+1)*sizeof(float)))){
+          	fprintf(stderr,"Error allocating particle memory\n");
+          	exit(1);
+        }
+        if(snap.GetBlock("POS ",pos,npart_read,0,skip_type) != npart_read){
+          	fprintf(stderr, "Error reading particle data for type %d\n",type);
+          	continue;
+        }
+        /*Sanity check the data*/
+        for(int i=0; i<npart_read; i++)
+              if(fabs(pos[3*i]) > head.BoxSize || fabs(pos[3*i+1]) > head.BoxSize || fabs(pos[3*i+2]) > head.BoxSize){
+                      fprintf(stderr, "Part %d position is at [%e,%e,%e]! Something is wrong!\n",i,pos[3*i],pos[3*i+1],pos[3*i+2]);
+              }
+        /* Fieldize. positions should be an array of size 3*particles 
+         * (like the output of read_gadget_float3)
+         * out is an array of size [dims*dims*dims]
+         * the "extra" switch, if set to one, will assume that the output 
+         * is about to be handed to an FFTW in-place routine, 
+         * and set skip the last 2 places of the each row in the last dimension
+         */
+        fieldize(head.BoxSize,field_dims,field,snap.GetNpart(type),npart_read,pos, 1);
+        free(pos);
+        power[type]=(float *) malloc(nrbins*sizeof(float));
+        count[type]=(int *) malloc(nrbins*sizeof(int));
+        keffs[type]=(float *) malloc(nrbins*sizeof(float));
+        if(!power[type] || !count[type] || !keffs[type]){
+      		fprintf(stderr,"Error allocating memory for power spectrum.\n");
+      		exit(1);
+        }
+        nrbins=powerspectrum(field_dims,field,nrbins, power[type],count[type],keffs[type]);
+        free(field);
   }
   /*Print power. Note use the count from the DM particles, because 
    * they dominate the modes. I'm not sure the sample variance 
    * really decreases by a factor of two from adding a subdominant baryon component.*/
-  string filename=outdir;
-  size_t last=infiles.find_last_of("/\\");
   /*Print out a baryon P(k) if there are any baryons*/
   if(snap.GetNpart(BARYON_TYPE)){
      filename+="/PK-by-"+infiles.substr(last+1);
-     print_pk(filename,nrbins,keffs[BARYON_TYPE],power[BARYON_TYPE],count[BARYON_TYPE]);
+     print_pk(filename,nrbins,keffs[BARYON_TYPE],power[BARYON_TYPE],count[DM_TYPE]);
   }
   /*Print out a DM P(k) if there is any DM*/
   if(snap.GetNpart(DM_TYPE)){
