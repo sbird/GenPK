@@ -18,8 +18,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <srfftw.h>
-#include <srfftw_threads.h>
+#include <fftw3.h>
 /* Fieldize. positions should be an array of size 3*particles 
  * (like the output of read_gadget_float3)
  * out is an array of size [dims*dims*dims]*/
@@ -40,7 +39,7 @@ float invwindow(int kx, int ky, int kz, int n);
  * The output has size dims*dims*(dims/2+1) *complex* values
  * So need 2*dims*dims*(dims/2+1) float space.
  * Need at least floor(sqrt(3)*abs((dims+1.0)/2.0)+1) values in power and count.*/
-int powerspectrum(int dims, fftw_real *field, int nrbins, float *power, int *count, float *keffs);
+int powerspectrum(int dims, fftwf_plan* pl,fftwf_complex* outfield, int nrbins, float *power, int *count, float *keffs);
 #ifdef __cplusplus
 }
 #endif

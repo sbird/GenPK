@@ -1,15 +1,18 @@
 PRO=#-pg
-OF=
-#-DOLD_FORMAT
-#CC=gcc -O3 -g -Wall -c -std=gnu99 -fopenmp $(OF) $(PRO)
-#LINK=gcc -lm -lsrfftw_threads -lsfftw_threads -lsrfftw -lsfftw -lpthread -lgomp -L/data/store/spb41/apps/fftw/lib $(PRO)
-# icc; segfaults or fails to read.
+#icc
 CC=icc
 CXX = icpc
 CFLAGS=-O2 -g -c -std=c99 -w1 -openmp -I/home/spb41/Lyman-alpha/GadgetReader
 CXXFLAGS= ${CFLAGS}
-LINK=${CXX} -openmp $(PRO)
-LFLAGS = -lsrfftw_threads -lsfftw_threads -lsrfftw -lsfftw -lpthread -lgadread -L/home/spb41/Lyman-alpha/GadgetReader
+LINK=${CXX} -openmp
+LFLAGS = -lfftw3f_threads -lfftw3f -lpthread -lgadread -L/home/spb41/Lyman-alpha/GadgetReader
+#gcc
+# CC=gcc
+# CXX = g++
+# CFLAGS=-O0 -g -c -Wall -fopenmp -I/home/spb41/Lyman-alpha/GadgetReader
+# CFLAGS+= -std=c99
+# LINK=${CXX} -openmp $(PRO)
+# LFLAGS = -lm -lgomp -lfftw3f_threads -lfftw3f -lpthread -lgadread -L/home/spb41/Lyman-alpha/GadgetReader
 objs = gen-pk.o powerspectrum.o fieldize.o 
 .PHONY:all love clean
 all:gen-pk

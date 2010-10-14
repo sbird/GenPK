@@ -19,7 +19,12 @@
 #include <unistd.h>
 //For CHAR_BIT
 #include <limits.h>
+//For omp_get_num_procs
+#include <omp.h>
 #include <string>
+//For memset
+#include <string.h>
+#include <stdlib.h>
 
 /* In practice this means we need just over 4GB, as sizeof(float)=4*/
 #define FIELD_DIMS 1024
@@ -38,7 +43,8 @@ int main(int argc, char* argv[]){
   string infiles(""),outdir("");
   char c;
   gadget_header head;
-/*   float *tot_power,*tot_keffs; */
+  fftwf_plan pl;
+  fftwf_complex *outfield;
   while((c = getopt(argc, argv, "i:o:h")) !=-1){
     switch(c){
         case 'o':
@@ -68,10 +74,22 @@ int main(int argc, char* argv[]){
   head=snap.GetHeader();
   nrbins=floor(sqrt(3)*((field_dims+1.0)/2.0)+1);
   fprintf(stderr, "Boxsize=%g, ",head.BoxSize);
-  fprintf(stderr, "NPart=(%g,%g,%g,%g,%g,%g)**3, ",cbrt(snap.GetNpart(0)),cbrt(snap.GetNpart(1)),cbrt(snap.GetNpart(2)),cbrt(snap.GetNpart(3)),cbrt(snap.GetNpart(4)),cbrt(snap.GetNpart(5)));
-  fprintf(stderr, "Masses=[%g %g %g %g %g %g], ",head.mass[0],head.mass[1],head.mass[2],head.mass[3],head.mass[4],head.mass[5]);
   fprintf(stderr, "redshift=%g, Ω_M=%g\n",head.redshift,head.Omega0);
+  fprintf(stderr, "NPart=(%g,%g,%g,%g,%g,%g)**3\n",cbrt(snap.GetNpart(0)),cbrt(snap.GetNpart(1)),cbrt(snap.GetNpart(2)),cbrt(snap.GetNpart(3)),cbrt(snap.GetNpart(4)),cbrt(snap.GetNpart(5)));
+  fprintf(stderr, "Masses=[%g %g %g %g %g %g]\n",head.mass[0],head.mass[1],head.mass[2],head.mass[3],head.mass[4],head.mass[5]);
   /*Now make a power spectrum for each particle type*/
+  /* Allocating a bit more memory allows us to do in-place transforms.*/
+  if(!(field=(float *)fftwf_malloc(2*field_dims*field_dims*(field_dims/2+1)*sizeof(float)))){
+  	fprintf(stderr,"Error allocating memory for field\n");
+  	exit(1);
+  }
+  outfield=(fftwf_complex *) &field[0];
+  if(!fftwf_init_threads()){
+  		  fprintf(stderr,"Error initialising fftw threads\n");
+  		  return 0;
+  }
+  fftwf_plan_with_nthreads(omp_get_num_procs());
+  pl=fftwf_plan_dft_r2c_3d(field_dims,field_dims,field_dims,&field[0],outfield, FFTW_ESTIMATE);
   for(type=0; type<N_TYPE; type++)
   {
         int64_t npart_read;
@@ -80,11 +98,6 @@ int main(int argc, char* argv[]){
         /*Stars are another type of baryons*/
         if(snap.GetNpart(type)==0 || type==STARS_TYPE)
           continue;
-        /* Allocating a bit more memory allows us to do in-place transforms.*/
-        if(!(field=(float *)calloc(2*field_dims*field_dims*(field_dims/2+1),sizeof(float)))){
-      		fprintf(stderr,"Error allocating memory for field\n");
-      		exit(1);
-        }
         /* Set skip_type, which should include every type *other* than the one we're interested in
          * There are N_TYPE types, so skipping all types is 2^(N_TYPES)-1 and then subtract 2^type for 
          * the one we're trying to read*/
@@ -98,12 +111,10 @@ int main(int argc, char* argv[]){
         /*Try to allocate enough memory for particle table. If we can't, read it in chunks*/
         while(!(pos=(float *)malloc(3*(npart_read+1)*sizeof(float)))){
           	        fprintf(stderr,"Error allocating particle memory for type %d\n",type);
-                        free(field);
                   	continue;
         }
         if(snap.GetBlock("POS ",pos,npart_read,0,skip_type) != npart_read){
           	fprintf(stderr, "Error reading particle data for type %d\n",type);
-                free(field);
                 free(pos);
           	continue;
         }
@@ -119,6 +130,7 @@ int main(int argc, char* argv[]){
          * is about to be handed to an FFTW in-place routine, 
          * and set skip the last 2 places of the each row in the last dimension
          */
+        memset(field,0,2*field_dims*field_dims*(field_dims/2+1));
         fieldize(head.BoxSize,field_dims,field,snap.GetNpart(type),npart_read,pos, 1);
         free(pos);
         power[type]=(float *) malloc(nrbins*sizeof(float));
@@ -126,12 +138,12 @@ int main(int argc, char* argv[]){
         keffs[type]=(float *) malloc(nrbins*sizeof(float));
         if(!power[type] || !count[type] || !keffs[type]){
       		fprintf(stderr,"Error allocating memory for power spectrum.\n");
-      		free(field);
                 continue;
         }
-        nrbins=powerspectrum(field_dims,field,nrbins, power[type],count[type],keffs[type]);
-        free(field);
+        nrbins=powerspectrum(field_dims,&pl,outfield,nrbins, power[type],count[type],keffs[type]);
   }
+  fftwf_free(field);
+  fftwf_destroy_plan(pl);
   string filename=outdir;
   size_t last=infiles.find_last_of("/\\");
   /*Print power. Note use the count from the DM particles, because 
@@ -187,7 +199,7 @@ int print_pk(std::string filename, int nrbins, float * keffs, float * power, int
 /*Returns the next power of two. Stolen from wikipedia.*/
 int nexttwo(int n)
 {
-    int i;
+    unsigned int i;
     n--;
     for(i=1;i<sizeof(int)*CHAR_BIT; i<<=1)
        n |= n>>i;

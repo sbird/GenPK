@@ -40,24 +40,23 @@ int fieldize(double boxsize, int dims, float *out, int total_particles, int segm
 	/* This is one over density.*/
         #pragma omp parallel
 	{
-	#pragma omp for schedule(static, 4096)
-	for(int index=0;index<segment_particles;index+=IL)
-	{
+	#pragma omp for
+	for(int index=0;index<segment_particles;index+=IL){
 		float dx[3],tx[3], x[3], temp[IL][8];
 		int fx[3],nex[3],temp2[IL][8];
-      int il=(index+IL<segment_particles ? IL : segment_particles-index);
-		for(int k=0; k<il; k++)
-		{
-			for(int i=0; i<3; i++)
-			{
+                int il=(index+IL<segment_particles ? IL : segment_particles-index);
+		for(int k=0; k<il; k++){
+			for(int i=0; i<3; i++){
 				x[i]=positions[3*(index+k)+i]*units;	
 				fx[i]=floor(x[i]);
 				dx[i]=x[i]-fx[i];
 				tx[i]=1.0-dx[i];
 				nex[i]=(fx[i]+1)%dims;
-            if(nex[i]<0) nex[i]+=dims;
-				fx[i]%=dims;
-            if(fx[i]<0) fx[i]+=dims;
+                                if(nex[i]<0) 
+                                        nex[i]+=dims;
+		        	fx[i]%=dims;
+                                if(fx[i]<0)
+                                        fx[i]+=dims;
 			}
 			temp[k][0]=invrho*tx[0]*tx[1]*tx[2];
 			temp[k][1]=invrho*dx[0]*tx[1]*tx[2];
@@ -80,8 +79,7 @@ int fieldize(double boxsize, int dims, float *out, int total_particles, int segm
 		*to ensure synchronisation.*/
 		#pragma omp critical
 		{
-		for(int k=0; k<il; k++)
-		{
+		for(int k=0; k<il; k++){
 			out[temp2[k][0]]+=temp[k][0];
 			out[temp2[k][1]]+=temp[k][1];
 			out[temp2[k][2]]+=temp[k][2];
@@ -91,14 +89,6 @@ int fieldize(double boxsize, int dims, float *out, int total_particles, int segm
 			out[temp2[k][6]]+=temp[k][6];
 			out[temp2[k][7]]+=temp[k][7];
 		}
-/* 		out[dims2*fx[0] +fdims*fx[1] + fx[2]]+=invrho*tx[0]*tx[1]*tx[2]; */
-/* 		out[dims2*nex[0]+fdims*fx[1] + fx[2]]+=invrho*dx[0]*tx[1]*tx[2]; */
-/* 		out[dims2*fx[0] +fdims*nex[1]+ fx[2]]+=invrho*tx[0]*dx[1]*tx[2]; */
-/* 		out[dims2*nex[0]+fdims*nex[1]+ fx[2]]+=invrho*dx[0]*dx[1]*tx[2]; */
-/* 		out[dims2*fx[0] +fdims*fx[1] +nex[2]]+=invrho*tx[0]*tx[1]*dx[2]; */
-/* 		out[dims2*nex[0]+fdims*fx[1] +nex[2]]+=invrho*dx[0]*tx[1]*dx[2]; */
-/* 		out[dims2*fx[0] +fdims*nex[1]+nex[2]]+=invrho*tx[0]*dx[1]*dx[2]; */
-/* 		out[dims2*nex[0]+fdims*nex[1]+nex[2]]+=invrho*dx[0]*dx[1]*dx[2]; */
 		}
 	}
 	}
