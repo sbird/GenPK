@@ -25,7 +25,7 @@
 /*Little macro to work the storage order of the FFT.*/
 #define KVAL(n) ((n)<=dims/2 ? (n) : ((n)-dims))
 
-int powerspectrum(int dims, float *field, int nrbins, float *power, float *count,float *keffs)
+int powerspectrum(int dims, float *field, int nrbins, float *power, int *count,float *keffs)
 {
 	fftwnd_plan pl;
 	fftw_complex *outfield;

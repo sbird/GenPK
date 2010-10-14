@@ -4,23 +4,24 @@ OF=
 #CC=gcc -O3 -g -Wall -c -std=gnu99 -fopenmp $(OF) $(PRO)
 #LINK=gcc -lm -lsrfftw_threads -lsfftw_threads -lsrfftw -lsfftw -lpthread -lgomp -L/data/store/spb41/apps/fftw/lib $(PRO)
 # icc; segfaults or fails to read.
-CC=icc -O2 -g -c -std=c99 -openmp
-LINK=icc -openmp -lsrfftw_threads -lsfftw_threads -lsrfftw -lsfftw -lpthread $(PRO)
+CC=icc
+CXX = icpc
+CFLAGS=-O2 -g -c -std=c99 -w1 -openmp -I/home/spb41/Lyman-alpha/GadgetReader
+CXXFLAGS= ${CFLAGS}
+LINK=${CXX} -openmp $(PRO)
+LFLAGS = -lsrfftw_threads -lsfftw_threads -lsrfftw -lsfftw -lpthread -lgadread -L/home/spb41/Lyman-alpha/GadgetReader
+objs = gen-pk.o powerspectrum.o fieldize.o 
 .PHONY:all love clean
 all:gen-pk
-gen-pk:powerspectrum.o fieldize.o readgadget.o gen-pk.c gen-pk.h
-	${CC} gen-pk.c
-	${LINK} fieldize.o powerspectrum.o readgadget.o gen-pk.o -o gen-pk
-powerspectrum.o: powerspectrum.c Makefile
-	${CC} powerspectrum.c
-fieldize.o:fieldize.c Makefile
-	${CC} fieldize.c
-readgadget.o: readgadget.c readgadget.h Makefile
-	${CC} readgadget.c
+gen-pk: ${objs}
+	${LINK} ${LFLAGS} $^ -o $@
+powerspectrum.o: powerspectrum.c 
+fieldize.o:fieldize.c 
+gen-pk.o:gen-pk.cpp gen-pk.h 
 love:
 	@echo "Not war?" ; sleep 3
 	@echo "Look, I'm not equipped for that, okay?" ; sleep 2
 	@echo "Contact your hardware vendor for appropriate mods."
 
 clean:
-	rm *.o
+	rm ${objs} gen-pk
