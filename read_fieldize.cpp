@@ -42,8 +42,7 @@ int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box
          * out is an array of size [dims*dims*dims]
          * the "extra" switch, if set to one, will assume that the output 
          * is about to be handed to an FFTW in-place routine, 
-         * and set skip the last 2 places of the each row in the last dimension
-         */
+         * and set skip the last 2 places of the each row in the last dimension */
         memset(field,0,2*field_dims*field_dims*(field_dims/2+1));
         fieldize(box,field_dims,field,npart_read,npart_read,pos, 1);
         free(pos);
