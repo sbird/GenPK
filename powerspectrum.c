@@ -12,7 +12,11 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. */
 
-#include "gen-pk.h"
+#include <fftw3.h>
+#include <math.h>
+#include <stdlib.h>
+
+extern float invwindow(int kx, int ky, int kz, int n);
 
 /*Note we need some contiguous memory space after the actual data in field. *The real input data has size
  *dims*dims*dims
@@ -112,6 +116,6 @@ int powerspectrum(int dims, fftwf_plan* pl,fftwf_complex *outfield, int nrbins, 
 			power[i]/=count[i];
 		}
 	}
-	return nrbins;
+	return 0;
 }
 

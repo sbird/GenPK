@@ -15,24 +15,29 @@
 #ifndef GEN_PK_HEADER
 #define GEN_PK_HEADER
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <fftw3.h>
+#include "gadgetreader.hpp"
+#include <string>
+
+int nexttwo(int);
+int print_pk(std::string filename, int nrbins, float * keffs, float * power, int* count);
+void help(void);
+std::string type_str(int type);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 /* Fieldize. positions should be an array of size 3*particles 
  * (like the output of read_gadget_float3)
  * out is an array of size [dims*dims*dims]*/
 /* the "extra" switch, if set to one, will assume that the output 
  * is about to be handed to an FFTW in-place routine, 
- * and make it skip the last 2 places of the each row in the last dimension
- */
-#ifdef __cplusplus
-extern "C" {
-#endif
+ * and make it skip the last 2 places of the each row in the last dimension */
 int fieldize(double boxsize, int dims, float *out, int total_particles, int segment_particles, float *positions, int extra);
 
 /* The window function associated with the above.*/
 float invwindow(int kx, int ky, int kz, int n);
+int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box, int field_dims);
 /*Note we will need some contiguous memory space after the actual data in field.
  * The real input data has size
  * dims*dims*dims
@@ -43,6 +48,5 @@ int powerspectrum(int dims, fftwf_plan* pl,fftwf_complex* outfield, int nrbins, 
 #ifdef __cplusplus
 }
 #endif
-void help(void);
 
 #endif

@@ -98,6 +98,8 @@ int fieldize(double boxsize, int dims, float *out, int total_particles, int segm
 float invwindow(int kx, int ky, int kz, int n)
 {
 	float iwx,iwy,iwz;
+        if(!n)
+                return 0;
 	if(!kx)
 		iwx=1.0;
 	else
