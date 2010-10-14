@@ -39,10 +39,8 @@ int main(int argc, char* argv[]){
   char c;
   gadget_header head;
 /*   float *tot_power,*tot_keffs; */
-  while((c = getopt(argc, argv, "i:o:h")) !=-1)
-  {
-    switch(c)
-      {
+  while((c = getopt(argc, argv, "i:o:h")) !=-1){
+    switch(c){
         case 'o':
            outdir=static_cast<string>(optarg);
            break;
@@ -62,8 +60,7 @@ int main(int argc, char* argv[]){
           return 0;
   }
   //Work out how large a field we need
-  for(type=0;type<N_TYPE;type++)
-  {
+  for(type=0;type<N_TYPE;type++){
     int tmp=2*nexttwo(cbrt(snap.GetNpart(type)));
     field_dims=std::max(field_dims, std::min(tmp, FIELD_DIMS));
   }
@@ -78,8 +75,6 @@ int main(int argc, char* argv[]){
   for(type=0; type<N_TYPE; type++)
   {
         int64_t npart_read;
-        string filename=outdir;
-        size_t last=infiles.find_last_of("/\\");
         //Initially set it to skip all types
         int skip_type=(1<<N_TYPE)-1;
         /*Stars are another type of baryons*/
@@ -100,12 +95,16 @@ int main(int argc, char* argv[]){
                 npart_read+=snap.GetNpart(STARS_TYPE);
                 skip_type-=(1<<STARS_TYPE);
         }
-        if(!(pos=(float *)malloc(3*(npart_read+1)*sizeof(float)))){
-          	fprintf(stderr,"Error allocating particle memory\n");
-          	exit(1);
+        /*Try to allocate enough memory for particle table. If we can't, read it in chunks*/
+        while(!(pos=(float *)malloc(3*(npart_read+1)*sizeof(float)))){
+          	        fprintf(stderr,"Error allocating particle memory for type %d\n",type);
+                        free(field);
+                  	continue;
         }
         if(snap.GetBlock("POS ",pos,npart_read,0,skip_type) != npart_read){
           	fprintf(stderr, "Error reading particle data for type %d\n",type);
+                free(field);
+                free(pos);
           	continue;
         }
         /*Sanity check the data*/
@@ -127,11 +126,14 @@ int main(int argc, char* argv[]){
         keffs[type]=(float *) malloc(nrbins*sizeof(float));
         if(!power[type] || !count[type] || !keffs[type]){
       		fprintf(stderr,"Error allocating memory for power spectrum.\n");
-      		exit(1);
+      		free(field);
+                continue;
         }
         nrbins=powerspectrum(field_dims,field,nrbins, power[type],count[type],keffs[type]);
         free(field);
   }
+  string filename=outdir;
+  size_t last=infiles.find_last_of("/\\");
   /*Print power. Note use the count from the DM particles, because 
    * they dominate the modes. I'm not sure the sample variance 
    * really decreases by a factor of two from adding a subdominant baryon component.*/
