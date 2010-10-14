@@ -1,20 +1,19 @@
 PRO=#-pg
+GREAD=/home/spb41/Lyman-alpha/GadgetReader
 #icc
-# CC=icc
-# CXX = icpc
-# CFLAGS=-O2 -g -c -std=c99 -w1 -openmp -I/home/spb41/Lyman-alpha/GadgetReader
-# CXXFLAGS= ${CFLAGS}
-# LINK=${CXX} -openmp
-# LFLAGS = -lfftw3f_threads -lfftw3f -lpthread -lgadread -L/home/spb41/Lyman-alpha/GadgetReader
+CC=icc
+CXX = icpc
+CFLAGS=-O2 -g -c -w1 -openmp -I${GREAD}
+LINK=${CXX} -openmp
+LFLAGS = -lfftw3f_threads -lfftw3f -lpthread -lgadread -L${GREAD}
 #gcc
-GREAD=/home/spb41/personal-code/GadgetReader
-CC=gcc
-CXX = g++
-CFLAGS=-O2 -g -c -Wall -fopenmp -I${GREAD}
+# CC=gcc
+# CXX = g++
+# CFLAGS=-O2 -g -c -Wall -fopenmp -I${GREAD}
+# LINK=${CXX} -openmp $(PRO)
+# LFLAGS = -lm -lgomp -lfftw3f_threads -lfftw3f -lpthread -lgadread -L${GREAD}
 CXXFLAGS:= ${CFLAGS}
 CFLAGS+= -std=c99
-LINK=${CXX} -openmp $(PRO)
-LFLAGS = -lm -lgomp -lfftw3f_threads -lfftw3f -lpthread -lgadread -L${GREAD}
 objs = powerspectrum.o fieldize.o read_fieldize.o utils.o
 .PHONY:all love clean test
 all:gen-pk
