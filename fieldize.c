@@ -20,7 +20,6 @@
  * and set skip the last 2 places of the each row in the last dimension
  */
 #include <math.h>
-#include <stdio.h>
 #include <stdint.h>
 #define IL 64
 
