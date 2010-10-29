@@ -2,6 +2,8 @@
 //For memset
 #include <string.h>
 #include <cmath>
+//For malloc
+#include <stdlib.h>
 
 int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box, int field_dims)
 {

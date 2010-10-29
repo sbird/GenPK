@@ -5,7 +5,7 @@ CC=icc
 CXX = icpc
 CFLAGS=-O2 -g -c -w1 -openmp -I${GREAD}
 LINK=${CXX} -openmp
-LFLAGS = -lfftw3f_threads -lfftw3f -lpthread -lgadread -L${GREAD}
+LFLAGS = -lfftw3f_threads -lfftw3f -lpthread -lrgad -L${GREAD} -Wl,-rpath,$(GREAD)
 #gcc
 # CC=gcc
 # CXX = g++
@@ -34,4 +34,4 @@ love:
 	@echo "Contact your hardware vendor for appropriate mods."
 
 clean:
-	rm ${objs} gen-pk.o gen-pk
+	-rm -f ${objs} gen-pk.o gen-pk
