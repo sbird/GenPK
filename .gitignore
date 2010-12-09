@@ -2,3 +2,6 @@ gen-pk
 tags
 *.o
 .*.swp
+btest
+test
+libgadread.so
