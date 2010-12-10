@@ -25,7 +25,7 @@ read_fieldize.o: read_fieldize.cpp gen-pk.h
 utils.o: utils.cpp
 gen-pk.o:gen-pk.cpp gen-pk.h 
 btest: test.cpp ${objs}
-	${LINK}-I${GREAD} ${LFLAGS} -lboost_unit_test_framework $^ -o $@
+	${LINK} -I${GREAD} ${LFLAGS} -lboost_unit_test_framework $^ -o $@
 test: btest
 	@./btest
 love:
