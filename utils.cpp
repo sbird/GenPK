@@ -53,6 +53,8 @@ std::string type_str(int type)
                         return "by";
                 case DM_TYPE:
                         return "DM";
+                case NEUTRINO_TYPE:
+                        return "nu";
                 default:
                         return "xx";
         }
