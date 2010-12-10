@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(check_read_fieldize)
         BOOST_REQUIRE_MESSAGE(snap.GetNumFiles()==2,"Failed to find test snapshot data");
         BOOST_REQUIRE_EQUAL(read_fieldize(field, &snap, BARYON_TYPE, 3000,4),0);
         FLOATS_NEAR_TO(field[10],0);
-        FLOATS_NEAR_TO(field[0],1.64618);
+        FLOATS_NEAR_TO(field[0],1.52769);
         FLOATS_NEAR_TO(field[15],0.700735);
         BOOST_REQUIRE_EQUAL(read_fieldize(field, &snap,BULGE_TYPE, 3000,4),1);
 }

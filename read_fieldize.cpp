@@ -8,6 +8,7 @@
 int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box, int field_dims)
 {
         int64_t npart_read;
+        int64_t npart_stars=0;
         float *pos=NULL;
         //Initially set it to skip all types
         int skip_type=(1<<N_TYPE)-1;
@@ -20,12 +21,10 @@ int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box
         npart_read=(*snap).GetNpart(type);
         skip_type-=(1<<type);
         /* Add the stars if we are using baryons. */
-        if(type==BARYON_TYPE){
-                npart_read+=(*snap).GetNpart(STARS_TYPE);
-                skip_type-=(1<<STARS_TYPE);
-        }
-        /*Try to allocate enough memory for particle table. If we can't, read it in chunks*/
-        while(!(pos=(float *)malloc(3*(npart_read+1)*sizeof(float)))){
+        if(type==BARYON_TYPE)
+                npart_stars=(*snap).GetNpart(STARS_TYPE);
+        /*Try to allocate enough memory for particle table.*/
+        while(!(pos=(float *)malloc(3*(npart_read+npart_stars+1)*sizeof(float)))){
           	        fprintf(stderr,"Error allocating particle memory for type %d\n",type);
                   	return 1;
         }
@@ -33,6 +32,16 @@ int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box
           	fprintf(stderr, "Error reading particle data for type %d\n",type);
                 free(pos);
           	return 1;
+        }
+        /*Read the stars. This needs to be done in a separate GetBlocks call at the moment*/
+        if(type==BARYON_TYPE){
+                skip_type=(1<<N_TYPE)-1-(1<<STARS_TYPE);
+                if((*snap).GetBlock("POS ",pos+(3*npart_read),npart_stars,0,skip_type) != npart_stars){
+                        fprintf(stderr, "Error reading particle data for type %d\n",type);
+                        free(pos);
+                        return 1;
+                }
+                npart_read+=npart_stars;
         }
         /*Sanity check the data*/
         for(int i=0; i<npart_read; i++)
