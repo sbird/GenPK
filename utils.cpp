@@ -2,6 +2,8 @@
 //For CHAR_BIT
 #include <limits.h>
 
+/** \file
+ * Defines a few small utility functions*/
 int print_pk(std::string filename, int nrbins, float * keffs, float * power, int * count)
 {
   FILE *fd;
@@ -41,7 +43,9 @@ int nexttwo(int n)
 
 void help()
 {
-           fprintf(stderr, "Usage: ./gen-pk -i filenames -o outdir\n");
+           fprintf(stderr, "Usage: ./gen-pk -i filenames -o outdir\n"
+                           "Outputs one file per particle type, with the name PK-$TYPE-$INPUT\n"
+                           "Each output file has three columns, for each bin, k_eff, P(k) and N_modes\n");
            return;
 }
 

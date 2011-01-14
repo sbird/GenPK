@@ -21,12 +21,17 @@
  */
 #include <math.h>
 #include <stdint.h>
+
+/** Number of particles to keep in the thread-local buffer*/
 #define IL 64
 
 #ifndef M_PI
+        /** C99 does not define PI!*/
         #define M_PI 3.1415926535897932384626433832795
 #endif
 
+/** \file
+ * Defines fieldize() */
 int fieldize(double boxsize, int dims, float *out, int total_particles, int segment_particles, float *positions,int extra)
 {
 	const int dims3=pow(dims,3);

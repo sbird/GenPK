@@ -12,6 +12,41 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. */
 
+/** \mainpage 
+ * \section intro_sec Introduction 
+ * MatPow is a 3D matter power spectrum estimator, written in C++ and parallelised with OpenMP. 
+ * 
+ * \section feat_sec Features
+ *
+ * A matter power spectrum estimator, which can read most Gadget-I and II format files through the use of the 
+ * GadgetReader library. Calculates the matter power spectrum quickly, as well as the expected error from 
+ * cosmic variance. 
+ *
+ * Outputs one file per particle type found. 
+ *
+ * \section missing_sec Missing Features 
+ * 
+ * Should rebin to ensure enough modes per bin
+ *
+ * Use Volker Springel's fold-on-itself to calculate small-scale power below the Nyquist frequency
+ *
+ * Support "fake" kspace neutrinos.
+ *
+ * \section usage_sec Usage
+ *
+ * See:
+ * ./gen-pk --help
+ *
+ * \section req_sec Requirements
+ * A C++ compiler with map, vector, set getopt, and stdint.h
+ *
+ * GadgetReader library, preferably installed in ../GadgetReader 
+ * (edit the first line of the Makefile for other locations)
+ *
+ * FFTW3
+ *
+ * Boost::Test library >= 1.34 for the test suite
+ */
 #include "gen-pk.h"
 #include <math.h>
 //For getopt
@@ -20,12 +55,19 @@
 #include <omp.h>
 #include <stdlib.h>
 
-/* In practice this means we need just over 4GB, as sizeof(float)=4*/
+/** Maximal size of FFT grid. 
+ * In practice 1024 means we need just over 4GB, as sizeof(float)=4*/
 #define FIELD_DIMS 1024
 
 using namespace GadgetReader;
 using namespace std;
 
+/** \file 
+ * File containing main() */
+
+/** Main function. Accepts arguments, uses GadgetReader to open the snapshot, prints some header info, 
+ * allocates FFT memory and creates a plan, calls read_fieldize and powerspectrum, prints the P(k) 
+ * to a file, and then frees the memory*/
 int main(int argc, char* argv[]){
   int nrbins,field_dims=0,type;
   float *field, *power, *keffs;

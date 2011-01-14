@@ -16,6 +16,8 @@
 #include <math.h>
 #include <stdlib.h>
 
+/** \file 
+ * Defines powerspectrum() wrapper around FFTW*/
 extern float invwindow(int kx, int ky, int kz, int n);
 
 /*Note we need some contiguous memory space after the actual data in field. *The real input data has size
@@ -25,7 +27,7 @@ extern float invwindow(int kx, int ky, int kz, int n);
  * Also the field needs to be stored carefully to make the 
  * extra space be in the right place. */
 
-/*Little macro to work the storage order of the FFT.*/
+/**Little macro to work the storage order of the FFT.*/
 #define KVAL(n) ((n)<=dims/2 ? (n) : ((n)-dims))
 
 int powerspectrum(int dims, fftwf_plan* pl,fftwf_complex *outfield, int nrbins, float *power, int *count,float *keffs)

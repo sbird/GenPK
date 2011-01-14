@@ -19,15 +19,15 @@ ifeq ($(CC),cc)
   endif
 endif
 
+LFLAGS += -lfftw3f_threads -lfftw3f -lpthread -lrgad -L${GREAD} -Wl,-rpath,$(GREAD)
 #Are we using gcc or icc?
 ifeq (icc,$(findstring icc,${CC}))
   CFLAGS +=-O2 -g -c -w1 -openmp -I${GREAD}
   LINK +=${CXX} -openmp
-  LFLAGS += -lfftw3f_threads -lfftw3f -lpthread -lrgad -L${GREAD} -Wl,-rpath,$(GREAD)
 else
   CFLAGS +=-O2 -g -c -Wall -fopenmp -I${GREAD}
   LINK +=${CXX} -openmp $(PRO)
-  LFLAGS += -lm -lgomp -lfftw3f_threads -lfftw3f -lpthread -lrgad -L${GREAD}
+  LFLAGS += -lm -lgomp 
 endif
 PRO=#-pg
 #gcc
@@ -35,19 +35,31 @@ PPFLAGS:=$(CFLAGS)
 CXXFLAGS+= $(PPFLAGS)
 CFLAGS+= -std=c99
 objs = powerspectrum.o fieldize.o read_fieldize.o utils.o
-.PHONY:all love clean test
+.PHONY:all love clean test dist
+
 all:gen-pk
+
 gen-pk: gen-pk.o ${objs}
 	${LINK} ${LFLAGS} $^ -o $@
+
 powerspectrum.o: powerspectrum.c gen-pk.h
 fieldize.o:fieldize.c 
 read_fieldize.o: read_fieldize.cpp gen-pk.h
 utils.o: utils.cpp
 gen-pk.o:gen-pk.cpp gen-pk.h 
+
 btest: test.cpp ${objs}
 	${LINK} -I${GREAD} ${LFLAGS} -lboost_unit_test_framework $^ -o $@
+
 test: btest
 	@./btest
+
+dist: Makefile README $(head) Doxyfile test.cpp read_utils.c gadgetreader.cpp gen-pk.h fieldize.c powerspectrum.c test_g2_snap.0 test_g2_snap.1
+	tar -czf matpow.tar.gz $^
+
+doc: Doxyfile gen-pk.h
+	doxygen $<
+
 love:
 	@echo "Not war?" ; sleep 3
 	@echo "Look, I'm not equipped for that, okay?" ; sleep 2

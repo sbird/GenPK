@@ -5,6 +5,8 @@
 //For malloc
 #include <stdlib.h>
 
+/** \file 
+ * Defines read_fieldize() , wraps fieldize() and GadgetReader*/
 int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box, int field_dims)
 {
         int64_t npart_read;
