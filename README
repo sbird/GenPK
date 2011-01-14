@@ -1,0 +1,34 @@
+==GenPK==
+
+This is GenPK, a program to calculate the 3D matter power spectrum. 
+
+To build, first download and build GadgetReader from the same location you got this file. 
+Ideally, GadgetReader  should be in ../GadgetReader. Change the first line of the Makefile 
+if this is not so. 
+
+Make sure FFTW is installed on your system and that the headers are in your PATH.
+
+To build, type:
+
+make
+
+For the test suite (requires Boost::Test > 1.34), do: 
+
+make test
+
+To run, do:
+
+ ./gen-pk -i filename -o outputdir
+
+filename can be any Gadget snapshot, with or without the .o, in format I or II.
+
+For the doxygen-generated documentation, do:
+
+make doc
+
+To delete compiler output:
+
+make clean or make cleanall
+
+Further documentation may be found in the doxygen generated files in doc/html/index.html
+(type "make doc" to make this file), by typing ./gen-pk --help or in gen-pk.cpp
