@@ -54,8 +54,8 @@ btest: test.cpp ${objs}
 test: btest
 	@./btest
 
-dist: Makefile README $(head) Doxyfile test.cpp read_utils.c gadgetreader.cpp gen-pk.h fieldize.c powerspectrum.c test_g2_snap.0 test_g2_snap.1
-	tar -czf matpow.tar.gz $^
+dist: Makefile README $(head) Doxyfile gen-pk.cpp  read_fieldize.cpp  test.cpp  utils.cpp gen-pk.h fieldize.c powerspectrum.c test_g2_snap.0 test_g2_snap.1
+	tar -czf genpk.tar.gz $^
 
 doc: Doxyfile gen-pk.h
 	doxygen $<

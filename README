@@ -28,7 +28,7 @@ make doc
 
 To delete compiler output:
 
-make clean or make cleanall
+make clean
 
 Further documentation may be found in the doxygen generated files in doc/html/index.html
 (type "make doc" to make this file), by typing ./gen-pk --help or in gen-pk.cpp
