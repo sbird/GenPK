@@ -1,18 +1,38 @@
+
+#Change this to where you installed GadgetReader
+GREAD=${CURDIR}/../GadgetReader
+
+
+ifeq ($(CC),cc)
+  ICC:=$(shell which icc --tty-only 2>&1)
+  #Can we find icc?
+  ifeq (/icc,$(findstring /icc,${ICC}))
+     CC = icc -vec_report0
+     CXX = icpc
+  else
+     GCC:=$(shell which gcc --tty-only 2>&1)
+     #Can we find gcc?
+     ifeq (/gcc,$(findstring /gcc,${GCC}))
+        CC = gcc
+        CXX = g++
+     endif
+  endif
+endif
+
+#Are we using gcc or icc?
+ifeq (icc,$(findstring icc,${CC}))
+  CFLAGS +=-O2 -g -c -w1 -openmp -I${GREAD}
+  LINK +=${CXX} -openmp
+  LFLAGS += -lfftw3f_threads -lfftw3f -lpthread -lrgad -L${GREAD} -Wl,-rpath,$(GREAD)
+else
+  CFLAGS +=-O2 -g -c -Wall -fopenmp -I${GREAD}
+  LINK +=${CXX} -openmp $(PRO)
+  LFLAGS += -lm -lgomp -lfftw3f_threads -lfftw3f -lpthread -lrgad -L${GREAD}
+endif
 PRO=#-pg
-GREAD=/home/spb41/Lyman-alpha/GadgetReader
-#icc
-CC=icc
-CXX = icpc
-CFLAGS=-O2 -g -c -w1 -openmp -I${GREAD}
-LINK=${CXX} -openmp
-LFLAGS = -lfftw3f_threads -lfftw3f -lpthread -lrgad -L${GREAD} -Wl,-rpath,$(GREAD)
 #gcc
-# CC=gcc
-# CXX = g++
-# CFLAGS=-O2 -g -c -Wall -fopenmp -I${GREAD}
-# LINK=${CXX} -openmp $(PRO)
-# LFLAGS = -lm -lgomp -lfftw3f_threads -lfftw3f -lpthread -lgadread -L${GREAD}
-CXXFLAGS:= ${CFLAGS}
+PPFLAGS:=$(CFLAGS)
+CXXFLAGS+= $(PPFLAGS)
 CFLAGS+= -std=c99
 objs = powerspectrum.o fieldize.o read_fieldize.o utils.o
 .PHONY:all love clean test
