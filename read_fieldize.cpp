@@ -30,7 +30,6 @@ int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box
         /* Add the stars if we are using baryons. */
         if(type==BARYON_TYPE)
                 npart_stars=(*snap).GetNpart(STARS_TYPE);
-        npart_total+=npart_stars;
         /* Try to allocate enough memory for particle table.
          * Maximum allocation of 512**3/2 particles ~ 768MB. */
         parts=MIN(npart_total,(1<<26));
@@ -39,6 +38,9 @@ int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box
                 return 1;
         }
         toread=npart_total;
+        /*Add stars to total here; we read them in a later call, but 
+         * they need to add to the total particle number for mass estimates*/
+        npart_total+=npart_stars;
         while(toread > 0){
                 if(toread < parts){
                         parts=toread;
