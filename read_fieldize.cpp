@@ -45,7 +45,6 @@ int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box
                 if(toread < parts){
                         parts=toread;
                 }
-                fprintf(stderr, "Calling GetBlock with toread=%ld read=%ld parts=%d\n",toread, read,parts);
                 if((*snap).GetBlock("POS ",pos,parts,read,skip_type) != parts){
                         fprintf(stderr, "Error reading particle data for type %d\n",type);
                         free(pos);
