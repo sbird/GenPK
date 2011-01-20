@@ -54,7 +54,7 @@ extern "C" {
  * @param positions Array of particle positions, of size 3*segment_particles (like the output of GetBlocks)
  * @param extra If this is 1, assume that the output is about to be handed to an FFTW in-place routine, 
  * and make it skip the last 2 places of the each row in the last dimension */
-int fieldize(double boxsize, int dims, float *out, int total_particles, int segment_particles, float *positions, int extra);
+int fieldize(double boxsize, int dims, float *out, int64_t total_particles, int64_t segment_particles, float *positions, int extra);
 
 /** The inverse window function associated with the Cloud-in-cell algorithm.
  * The power spectrum needs to deconvolve this.

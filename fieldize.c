@@ -32,7 +32,7 @@
 
 /** \file
  * Defines fieldize() */
-int fieldize(double boxsize, int dims, float *out, int total_particles, int segment_particles, float *positions,int extra)
+int fieldize(double boxsize, int dims, float *out, int64_t total_particles, int64_t segment_particles, float *positions,int extra)
 {
 	const int dims3=pow(dims,3);
 	const int fdims=2*(dims/2+extra);
