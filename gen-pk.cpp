@@ -108,7 +108,7 @@ int main(int argc, char* argv[]){
   fprintf(stderr, "Boxsize=%g, ",box);
   fprintf(stderr, "redshift=%g, Ω_M=%g\n",snap.GetHeader().redshift,snap.GetHeader().Omega0);
   fprintf(stderr, "NPart=(%g,%g,%g,%g,%g,%g)**3\n",cbrt(snap.GetNpart(0)),cbrt(snap.GetNpart(1)),cbrt(snap.GetNpart(2)),cbrt(snap.GetNpart(3)),cbrt(snap.GetNpart(4)),cbrt(snap.GetNpart(5)));
-  fprintf(stderr, "Masses=[%g %g]\n",snap.GetHeader().mass[0],snap.GetHeader().mass[1]);
+  fprintf(stderr, "Masses=[%g %g %g ]\n",snap.GetHeader().mass[0],snap.GetHeader().mass[1],snap.GetHeader().mass[2]);
   //Memory for the field
   /* Allocating a bit more memory allows us to do in-place transforms.*/
   if(!(field=(float *)fftwf_malloc(2*field_dims*field_dims*(field_dims/2+1)*sizeof(float)))){
