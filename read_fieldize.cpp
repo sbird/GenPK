@@ -12,7 +12,7 @@ int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box
 {
         int64_t npart_total,toread;
         int parts=0;
-        int64_t npart_stars=0;
+        int64_t npart_stars=0,read=0;
         float *pos=NULL;
         //Initially set it to skip all types
         int skip_type=(1<<N_TYPE)-1;
@@ -45,7 +45,8 @@ int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box
                 if(toread < parts){
                         parts=toread;
                 }
-                if((*snap).GetBlock("POS ",pos,parts,0,skip_type) != parts){
+                fprintf(stderr, "Calling GetBlock with toread=%ld read=%ld parts=%d\n",toread, read,parts);
+                if((*snap).GetBlock("POS ",pos,parts,read,skip_type) != parts){
                         fprintf(stderr, "Error reading particle data for type %d\n",type);
                         free(pos);
                         return 1;
@@ -64,6 +65,7 @@ int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box
                  * It is important that pos is not longer than max_int */
                 fieldize(box,field_dims,field,npart_total,parts,pos, 1);
                 toread-=parts;
+                read+=parts;
         }
         /*Read the stars. This needs to be done in a separate GetBlocks call at the moment*/
         if(type==BARYON_TYPE){
