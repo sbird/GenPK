@@ -23,7 +23,7 @@
 #include <boost/test/test_tools.hpp>
 
 #define FLOATS_NEAR_TO(x,y) \
-        BOOST_CHECK_MESSAGE( fabs((x) - (y)) <= max<float>(fabs(x),fabs(y))/1e6,(x)<<" is not close to "<<(y))
+        BOOST_CHECK_MESSAGE( fabs((x) - (y)) <= max<float>(fabs(x),fabs(y))/1e5,(x)<<" is not close to "<<(y))
 
 using namespace GadgetReader;
 using namespace std;
