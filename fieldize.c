@@ -15,10 +15,6 @@
 /* Fieldize. positions should be an array of size 3*segment_particles 
  * (like the output of read_gadget_float3)
  * out is an array of size [dims*dims*dims]*/
-/* the "extra" switch, if set to one, will assume that the output 
- * is about to be handed to an FFTW in-place routine, 
- * and set skip the last 2 places of the each row in the last dimension
- */
 #include <math.h>
 #include <stdint.h>
 
@@ -31,7 +27,22 @@
 #endif
 
 /** \file
- * Defines fieldize() */
+ * Defines fieldize() 
+ * Fieldize: this does cloud-in-cell interpolation, assuming periodic boundary conditions. 
+ * @param boxsize The physical size of the grid. This is only used so to convert the returned data to physical units
+ * @param dims The number of grid points to use
+ * @param out Pointer to the grid to interpolate onto. 
+ *          Should be an array of size dims^3 (or slightly larger if extra is set, see below.
+ * @param total_particles The total number of particles we are ultimately going to interpolate onto this grid.
+ *                        This is used to set the particle weights, and is different from segment_particles
+ *                        to support calling fieldize multiple times on sections of the total particle list
+ *                        (thus you can save memory by not loading the whole particle list at once).
+ * @param segment_particles The number of particles to interpolate on this call. The length of the positions array.
+ * @param positions Array of particle positions. Assumed to have dimensions 3*segment_particles
+ * @param extra This switch should be 0 or 1. If set to one, will assume that the output 
+ * is about to be handed to an FFTW in-place routine, 
+ * and skip the last 2 places of each row in the last dimension (of out)
+ */
 int fieldize(double boxsize, int dims, float *out, int64_t total_particles, int64_t segment_particles, float *positions,int extra)
 {
 	const int dims3=pow(dims,3);
