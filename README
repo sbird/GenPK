@@ -32,3 +32,15 @@ make clean
 
 Further documentation may be found in the doxygen generated files in doc/html/index.html
 (type "make doc" to make this file), by typing ./gen-pk --help or in gen-pk.cpp
+
+Powerspectrum output is in Fourier units; to convert to, eg, Mpc/h, you should multiply 
+k by 2 \pi / Boxsize and P(k) by (Boxsize/2\pi)^3, 
+where Boxsize is the size of the box in Mpc/h.
+
+In addition, CAMB uses a different Fourier convention to FFTW (which GenPK is based on), 
+so for comparison to CAMB you need to also multiply P(k) by (2\pi) ^3. 
+The total conversion factors are then
+
+k *= 2\pi / Boxsize
+P(k) *= Boxsize ^3
+
