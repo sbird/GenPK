@@ -7,7 +7,8 @@ import glob
 
 
 def load_genpk(path,box, o_nu = 0):
-    """Load a GenPk format power spectum."""
+    """Load a GenPk format power spectum, plotting the DM and the neutrinos (if present)
+    Does not plot baryons."""
     #Load DM P(k)
     o_m = 0.3
     matpow=np.loadtxt(path)
@@ -25,14 +26,12 @@ def load_genpk(path,box, o_nu = 0):
     Pk=matpow[1:,1]/scale**3
     return (simk,Pk)
 
-def plot_genpk_power(matpow1,matpow2, box,o_nu = 0, colour="blue"):
+def plot_genpk_power(matpow1, box,o_nu = 0, colour="blue"):
     """ Plot the matter power as output by gen-pk"""
     (k, Pk1)=load_genpk(matpow1,box, o_nu)
-    (k,Pk2)=load_genpk(matpow2,box, o_nu)
     #^2*2*!PI^2*2.4e-9*k*hub^3
     plt.ylabel("P(k) /(h-3 Mpc3)")
     plt.xlabel("k /(h Mpc-1)")
-    plt.title("Power spectrum change")
-    plt.semilogx(k, Pk2/Pk1, linestyle="-", color=colour)
-
+    plt.title("Power spectrum")
+    plt.semilogx(k, Pk1, linestyle="-", color=colour)
 
