@@ -41,6 +41,29 @@ void help(void);
  * @param type Particle type, such as BARYON_TYPE*/
 std::string type_str(int type);
 
+
+/** Wrapper function to read the data and pass it to fieldize in chunks.
+ * Returns 1 is some error occured allocating memory, and zero if successful.
+ * @param field Pointer to memory for output field
+ * @param snap GadgetReader object for snapshot
+ * @param type Particle type to read; since POS always has all types, complications are minimal
+ * @param box Boxsize, in kpc
+ * @param field_dims Length of side of the field above. */
+int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box, int field_dims);
+
+/** Wrapper function to read the data from an HDF5 snapshot and pass it to fieldize.
+ * Returns 1 is some error occured allocating memory, and zero if successful.
+ * @param field Pointer to memory for output field
+ * @param ffname filename of hdf snapshot
+ * @param type Particle type to read
+ * @param box Boxsize, in kpc
+ * @param field_dims Length of side of the field above.
+ * @param fileno number of file to use. */
+int read_fieldize_hdf5(float * field, const char *ffname, int type, double box, int field_dims, int fileno);
+
+/* this routine loads header data from the first file of an HDF5 snapshot.*/
+int load_hdf5_header(const char *ffname, double  *atime, double *redshift, double *box100, double *h100, int64_t *npart_all);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -63,16 +86,6 @@ int fieldize(double boxsize, int dims, float *out, int64_t total_particles, int6
  * @param kz k_z
  * @param n Total size of grid */
 float invwindow(int kx, int ky, int kz, int n);
-
-/** Wrapper function to read the data and pass it to fieldize in chunks.
- * Returns 1 is some error occured allocating memory, and zero if successful.
- * @param field Pointer to memory (may be uninitialised) for output field
- * @param snap GadgetReader object for snapshot
- * @param type Particle type to read; since POS always has all types, complications are minimal
- * @param box Boxsize, in kpc
- * @param field_dims Length of side of the field above. */
-int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box, int field_dims);
-
 /** Wrapper around FFTW to calculate the 3D power spectrum from a 3D field.
  * Returns 0.
  * @param dims Size of grid to FFT.

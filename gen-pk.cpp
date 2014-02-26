@@ -54,6 +54,7 @@
 //For omp_get_num_procs
 #include <omp.h>
 #include <stdlib.h>
+#include <sstream>
 
 /** Maximal size of FFT grid. 
  * In practice 1024 means we need just over 4GB, as sizeof(float)=4*/
@@ -61,6 +62,47 @@
 
 using namespace GadgetReader;
 using namespace std;
+
+#ifndef NOHDF5
+#include <hdf5.h>
+
+std::string find_first_hdf_file(const std::string& infname)
+{
+  /*Switch off error handling so that we can check whether a
+   * file is HDF5 */
+  /* Save old error handler */
+  hid_t error_stack=0;
+  herr_t (*old_func)(hid_t, void*);
+  void *old_client_data;
+  H5Eget_auto(error_stack, &old_func, &old_client_data);
+  /* Turn off error handling */
+  H5Eset_auto(error_stack, NULL, NULL);
+  std::string fname = infname;
+
+  /*Were we handed an HDF5 file?*/
+  if(H5Fis_hdf5(fname.c_str()) <= 0){
+     /*If we weren't, were we handed an HDF5 file without the suffix?*/
+     fname = infname+std::string(".0.hdf5");
+     if (H5Fis_hdf5(fname.c_str()) <= 0)
+        fname = std::string();
+  }
+
+  /* Restore previous error handler */
+  H5Eset_auto(error_stack, old_func, old_client_data);
+  return fname;
+}
+#endif
+
+/*Open a file for reading to check it exists*/
+int file_readable(const char * filename)
+{
+     FILE * file;
+     if ((file = fopen(filename, "r"))){
+          fclose(file);
+          return 1;
+     }
+     return 0;
+}
 
 /** \file 
  * File containing main() */
@@ -71,10 +113,14 @@ using namespace std;
 int main(int argc, char* argv[]){
   int nrbins,field_dims=0,type;
   float *field, *power, *keffs;
-  int *count; 
+  int *count;
+  int64_t npart_total[N_TYPE];
   string infiles(""),outdir("");
   char c;
   double box;
+  GSnap * snap = NULL;
+  int fileno=0;
+  bool use_hdf5 = false;
   fftwf_plan pl;
   fftwf_complex *outfield;
   while((c = getopt(argc, argv, "i:o:h")) !=-1){
@@ -91,24 +137,50 @@ int main(int argc, char* argv[]){
            return 0;
       }
   }
-  //Open the snapshot
-  GSnap snap(infiles);
-  if(outdir.empty() || snap.GetNumFiles() < 1){
-          help();
-          return 0;
+  unsigned i_fileno=0;
+#ifndef NOHDF5
+    /*ffname is a copy of input filename for extension*/
+    /*First open first file to get header properties*/
+    std::string fname = find_first_hdf_file(infiles);
+    std::string ffname = fname;
+    if ( !fname.empty() ){
+            /*See if we have been handed the first file of a set:
+             * our method for dealing with this closely mirrors
+             * HDF5s family mode, but we cannot use this, because
+             * our files may not all be the same size.*/
+	    i_fileno = fname.find(".0.hdf5")+1;
+        use_hdf5 = true;
+        double atime, redshift, h100;
+        //Get the header and print out some useful things
+        if(load_hdf5_header(fname.c_str(), &atime, &redshift, &box, &h100, npart_total)) {
+          fprintf(stderr, "Could not load header\n");
+          return 1;
+        }
+    }
+    else
+#endif
+  {
+    //Open the snapshot
+    snap = new GSnap(infiles);
+    if(outdir.empty() || (!use_hdf5 && snap->GetNumFiles() < 1)){
+            help();
+            return 0;
+    }
+      for(type=0;type<N_TYPE;type++)
+          npart_total[type]=snap->GetNpart(type);
+      //Get the header and print out some useful things
+    box=snap->GetHeader().BoxSize;
+    fprintf(stderr, "Boxsize=%g, ",box);
+    fprintf(stderr, "NPart=(%g,%g,%g,%g,%g,%g)**3\n",cbrt(npart_total[0]),cbrt(npart_total[1]),cbrt(npart_total[2]),cbrt(npart_total[3]),cbrt(npart_total[4]),cbrt(npart_total[5]));
+    fprintf(stderr, "Masses=[%g %g %g ]\n",snap->GetHeader().mass[0],snap->GetHeader().mass[1],snap->GetHeader().mass[2]);
+    fprintf(stderr, "redshift=%g, Ω_M=%g\n",snap->GetHeader().redshift,snap->GetHeader().Omega0);
   }
   //Work out how large a field we need
   for(type=0;type<N_TYPE;type++){
-    int tmp=2*nexttwo(cbrt(snap.GetNpart(type)));
+    int tmp=2*nexttwo(cbrt(npart_total[type]));
     field_dims=std::max(field_dims, std::min(tmp, FIELD_DIMS));
   }
-  //Get the header and print out some useful things
-  box=snap.GetHeader().BoxSize;
   nrbins=floor(sqrt(3)*((field_dims+1.0)/2.0)+1);
-  fprintf(stderr, "Boxsize=%g, ",box);
-  fprintf(stderr, "redshift=%g, Ω_M=%g\n",snap.GetHeader().redshift,snap.GetHeader().Omega0);
-  fprintf(stderr, "NPart=(%g,%g,%g,%g,%g,%g)**3\n",cbrt(snap.GetNpart(0)),cbrt(snap.GetNpart(1)),cbrt(snap.GetNpart(2)),cbrt(snap.GetNpart(3)),cbrt(snap.GetNpart(4)),cbrt(snap.GetNpart(5)));
-  fprintf(stderr, "Masses=[%g %g %g ]\n",snap.GetHeader().mass[0],snap.GetHeader().mass[1],snap.GetHeader().mass[2]);
   //Memory for the field
   /* Allocating a bit more memory allows us to do in-place transforms.*/
   if(!(field=(float *)fftwf_malloc(2*field_dims*field_dims*(field_dims/2+1)*sizeof(float)))){
@@ -135,15 +207,36 @@ int main(int argc, char* argv[]){
   }
   /*Now make a power spectrum for each particle type*/
   for(type=0; type<N_TYPE; type++){
-        if(read_fieldize(field,&snap,type, box, field_dims))
+        if(npart_total[type] == 0)
+            continue;
+        if (use_hdf5){
+            //Find filename
+            if(i_fileno != std::string::npos){
+		        std::ostringstream convert;
+		        convert<<fileno;
+                ffname = fname.replace(i_fileno, 1, convert.str());
+		    }
+            else
+             break;
+            /*If we ran out of files, we're done*/
+            if(!(file_readable(ffname.c_str()) && H5Fis_hdf5(ffname.c_str()) > 0))
+                    break;
+            read_fieldize_hdf5(field, ffname.c_str(), type, box, field_dims, fileno);
+            fileno++;
+        }
+        else{
+            if(read_fieldize(field,snap,type, box, field_dims))
                 continue;
+        }
         if(powerspectrum(field_dims,&pl,outfield,nrbins, power,count,keffs))
                 continue;
         filename=outdir;
         filename+="/PK-"+type_str(type)+"-"+infiles.substr(last+1);
         print_pk(filename,nrbins,keffs,power,count);
   }
+
   //Free memory
+  delete snap;
   free(power);
   free(count);
   free(keffs);

@@ -53,9 +53,7 @@ int fieldize(double boxsize, int dims, float *out, int64_t total_particles, int6
 	const float invrho=dims3/(float)total_particles;
 	const float units=dims/boxsize;
 	/* This is one over density.*/
-        #pragma omp parallel
-	{
-	#pragma omp for
+	#pragma omp parallel for
 	for(int index=0;index<segment_particles;index+=IL){
 		float dx[3],tx[3], x[3], temp[IL][8];
 		int fx[3],nex[3],temp2[IL][8];
@@ -105,7 +103,6 @@ int fieldize(double boxsize, int dims, float *out, int64_t total_particles, int6
 			out[temp2[k][7]]+=temp[k][7];
 		}
 		}
-	}
 	}
 	return 0;
 }

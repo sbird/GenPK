@@ -19,7 +19,7 @@ ifeq ($(CC),cc)
   endif
 endif
 
-LFLAGS += -lfftw3f_threads -lfftw3f -lpthread -lrgad -L${GREAD} -Wl,-rpath,$(GREAD)
+LFLAGS += -lfftw3f_threads -lfftw3f -lpthread -lrgad -L${GREAD} -Wl,-rpath,$(GREAD) -lhdf5 -lhdf5_hl
 #Are we using gcc or icc?
 ifeq (icc,$(findstring icc,${CC}))
   CFLAGS +=-O2 -g -c -w1 -openmp -I${GREAD}
