@@ -54,7 +54,6 @@
 //For omp_get_num_procs
 #include <omp.h>
 #include <stdlib.h>
-#include <sstream>
 
 /** Maximal size of FFT grid. 
  * In practice 1024 means we need just over 4GB, as sizeof(float)=4*/
@@ -173,7 +172,7 @@ int main(int argc, char* argv[]){
             if(read_fieldize(field,snap,type, box, field_dims))
                 continue;
         }
-        if(powerspectrum(field_dims,&pl,outfield,nrbins, power,count,keffs))
+        if(powerspectrum(field_dims,&pl,outfield, outfield, nrbins, power,count,keffs))
                 continue;
         filename=outdir;
         filename+="/PK-"+type_str(type)+"-"+infiles.substr(last+1);

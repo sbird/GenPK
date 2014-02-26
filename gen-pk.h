@@ -100,11 +100,12 @@ float invwindow(int kx, int ky, int kz, int n);
  * The real input data has size dims**3
  * The output has size dims*dims*(dims/2+1) *complex* values
  * So we must allocate 2*dims*dims*(dims/2+1)*sizeof(float).
+ * @param outfield2 Pointer to second array, just like outfield. What is computed is outfield*outfield2. May be the same array.
  * @param nrbins Number of bins in the output.
  * @param power Pointer to memory to output powerspectrum to. Needs to store nrbins values.
  * @param count Ditto for modes per bin
  * @param keffs Ditto for effective k.*/
-int powerspectrum(int dims, fftwf_plan* pl,fftwf_complex* outfield, int nrbins, float *power, int *count, float *keffs);
+int powerspectrum(int dims, fftwf_plan* pl, fftwf_complex* outfield, fftwf_complex* outfield2, int nrbins, float *power, int *count, float *keffs);
 
 #ifdef __cplusplus
 }
