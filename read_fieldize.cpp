@@ -7,6 +7,7 @@
 #ifndef NOHDF5
 #include <hdf5.h>
 #include <hdf5_hl.h>
+#include <sstream>
 #endif
 
 #define MIN(a,b) ( (a) < (b) ? (a) : (b))
@@ -95,6 +96,78 @@ int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box
 }
 
 #ifndef NOHDF5
+
+std::string find_first_hdf_file(const std::string& infname)
+{
+  /*Switch off error handling so that we can check whether a
+   * file is HDF5 */
+  /* Save old error handler */
+  hid_t error_stack=0;
+  herr_t (*old_func)(hid_t, void*);
+  void *old_client_data;
+  H5Eget_auto(error_stack, &old_func, &old_client_data);
+  /* Turn off error handling */
+  H5Eset_auto(error_stack, NULL, NULL);
+  std::string fname = infname;
+
+  /*Were we handed an HDF5 file?*/
+  if(H5Fis_hdf5(fname.c_str()) <= 0){
+     /*If we weren't, were we handed an HDF5 file without the suffix?*/
+     fname = infname+std::string(".0.hdf5");
+     if (H5Fis_hdf5(fname.c_str()) <= 0)
+        fname = std::string();
+  }
+
+  /* Restore previous error handler */
+  H5Eset_auto(error_stack, old_func, old_client_data);
+  return fname;
+}
+
+/*Open a file for reading to check it exists*/
+int file_readable(const char * filename)
+{
+     FILE * file;
+     if ((file = fopen(filename, "r"))){
+          fclose(file);
+          return 1;
+     }
+     return 0;
+}
+
+std::vector<std::string> find_hdf_set(const std::string& infname)
+{
+    unsigned i_fileno=0;
+    int fileno=0;
+    std::vector<std::string> files;
+    std::string fname = find_first_hdf_file(infname);
+    if ( !fname.empty() ){
+            /*See if we have been handed the first file of a set:
+             * our method for dealing with this closely mirrors
+             * HDF5s family mode, but we cannot use this, because
+             * our files may not all be the same size.*/
+	    i_fileno = fname.find(".0.hdf5")+1;
+        files.push_back(fname);
+    }
+    //Find filename
+    while(true) {
+        std::string ffname;
+        if(i_fileno != std::string::npos){
+            std::ostringstream convert;
+            convert<<fileno;
+            ffname = fname.replace(i_fileno, 1, convert.str());
+        }
+        else
+           break;
+        /*If we ran out of files, we're done*/
+        if(!(file_readable(ffname.c_str()) && H5Fis_hdf5(ffname.c_str()) > 0))
+                break;
+
+        files.push_back(ffname);
+        fileno++;
+    }
+    return files;
+}
+
 
 /*Routine that is a wrapper around HDF5's dataset access routines to do error checking. Returns the length on success, 0 on failure.*/
 hsize_t get_single_dataset(const char *name, float * data_ptr,  hsize_t data_length, hid_t * hdf_group,int fileno)

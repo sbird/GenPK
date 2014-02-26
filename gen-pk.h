@@ -64,6 +64,10 @@ int read_fieldize_hdf5(float * field, const char *ffname, int type, double box, 
 /* this routine loads header data from the first file of an HDF5 snapshot.*/
 int load_hdf5_header(const char *ffname, double  *atime, double *redshift, double *box100, double *h100, int64_t *npart_all);
 
+/** Finds a snapshot set of hdf files from the given initial filename
+ */
+std::vector<std::string> find_hdf_set(const std::string& infname);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
