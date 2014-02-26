@@ -62,7 +62,7 @@ int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box
 int read_fieldize_hdf5(float * field, const char *ffname, int type, double box, int field_dims, int fileno);
 
 /* this routine loads header data from the first file of an HDF5 snapshot.*/
-int load_hdf5_header(const char *ffname, double  *atime, double *redshift, double *box100, double *h100, int64_t *npart_all);
+int load_hdf5_header(const char *ffname, double  *atime, double *redshift, double *box100, double *h100, int64_t *npart_all, double * mass);
 
 /** Finds a snapshot set of hdf files from the given initial filename
  */
@@ -93,7 +93,6 @@ float invwindow(int kx, int ky, int kz, int n);
 /** Wrapper around FFTW to calculate the 3D power spectrum from a 3D field.
  * Returns 0.
  * @param dims Size of grid to FFT.
- * @param pl FFTW plan, pre-generated, for transform
  * @param outfield Pointer to memory where the FFT stores its output, as was specified to the FFTW plan.
  * This is likely to be an in-place transform, in which case 
  * we will need some contiguous memory space after the actual data in field.
@@ -105,7 +104,7 @@ float invwindow(int kx, int ky, int kz, int n);
  * @param power Pointer to memory to output powerspectrum to. Needs to store nrbins values.
  * @param count Ditto for modes per bin
  * @param keffs Ditto for effective k.*/
-int powerspectrum(int dims, fftwf_plan* pl, fftwf_complex* outfield, fftwf_complex* outfield2, int nrbins, float *power, int *count, float *keffs);
+int powerspectrum(int dims, fftwf_complex* outfield, fftwf_complex* outfield2, int nrbins, float *power, int *count, float *keffs);
 
 #ifdef __cplusplus
 }

@@ -208,11 +208,10 @@ hsize_t get_triple_dataset(const char *name, float * data_ptr, hsize_t data_leng
 }
 
 /* this routine loads header data from the first file of an HDF5 snapshot.*/
-int load_hdf5_header(const char *ffname, double  *atime, double *redshift, double *box100, double *h100, int64_t *npart_all)
+int load_hdf5_header(const char *ffname, double  *atime, double *redshift, double *box100, double *h100, int64_t *npart_all, double * mass)
 {
   int i;
   unsigned int npart[N_TYPE];
-  double mass[N_TYPE];
   int flag_cooling;
   double Omega0, OmegaLambda;
   hid_t hdf_group,hdf_file;

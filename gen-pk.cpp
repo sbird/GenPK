@@ -69,25 +69,31 @@ using namespace std;
 /** Main function. Accepts arguments, uses GadgetReader to open the snapshot, prints some header info, 
  * allocates FFT memory and creates a plan, calls read_fieldize and powerspectrum, prints the P(k) 
  * to a file, and then frees the memory*/
-int main(int argc, char* argv[]){
+int main(int argc, char* argv[])
+{
   int nrbins,field_dims=0,type;
   float *field, *power, *keffs;
   int *count;
   int64_t npart_total[N_TYPE];
+  double mass[N_TYPE];
   string infiles(""),outdir("");
   char c;
+  int crosstype = -1;
   double box;
   GSnap * snap = NULL;
   bool use_hdf5 = false;
   fftwf_plan pl;
   fftwf_complex *outfield;
-  while((c = getopt(argc, argv, "i:o:h")) !=-1){
+  while((c = getopt(argc, argv, "i:o:c:h")) !=-1){
     switch(c){
         case 'o':
            outdir=static_cast<string>(optarg);
            break;
         case 'i':
            infiles=static_cast<string>(optarg);
+           break;
+        case 'c':
+           crosstype = static_cast<int>(atoi(optarg));
            break;
         case 'h':
         default:
@@ -107,7 +113,7 @@ int main(int argc, char* argv[]){
       use_hdf5 = true;
       double atime, redshift, h100;
       //Get the header and print out some useful things
-      if(load_hdf5_header(fnames[0].c_str(), &atime, &redshift, &box, &h100, npart_total)) {
+      if(load_hdf5_header(fnames[0].c_str(), &atime, &redshift, &box, &h100, npart_total, mass)) {
         fprintf(stderr, "Could not load header\n");
         return 1;
       }
@@ -121,8 +127,10 @@ int main(int argc, char* argv[]){
             help();
             return 0;
     }
-      for(type=0;type<N_TYPE;type++)
+      for(type=0;type<N_TYPE;type++){
           npart_total[type]=snap->GetNpart(type);
+          mass[type] = snap->GetHeader().mass[type];
+      }
       //Get the header and print out some useful things
     box=snap->GetHeader().BoxSize;
     fprintf(stderr, "Boxsize=%g, ",box);
@@ -160,23 +168,67 @@ int main(int argc, char* argv[]){
   	fprintf(stderr,"Error allocating memory for power spectrum.\n");
         return 1;
   }
-  /*Now make a power spectrum for each particle type*/
-  for(type=0; type<N_TYPE; type++){
-        if(npart_total[type] == 0)
-            continue;
-        if (use_hdf5){
-            for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
-                read_fieldize_hdf5(field, fnames[fileno].c_str(), type, box, field_dims, fileno);
+  if(crosstype < 0){
+    /*Now make a power spectrum for each particle type*/
+    for(type=0; type<N_TYPE; type++){
+          if(npart_total[type] == 0)
+              continue;
+          if (use_hdf5){
+              for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
+                  read_fieldize_hdf5(field, fnames[fileno].c_str(), type, box, field_dims, fileno);
+          }
+          else{
+              if(read_fieldize(field,snap,type, box, field_dims))
+                  continue;
+          }
+	      fftwf_execute(pl);
+          if(powerspectrum(field_dims,outfield, outfield, nrbins, power,count,keffs))
+                  continue;
+          filename=outdir;
+          filename+="/PK-"+type_str(type)+"-"+infiles.substr(last+1);
+          print_pk(filename,nrbins,keffs,power,count);
+    }
+  }
+  //Do a cross-correlation
+  else
+  {
+        if(crosstype > N_TYPE || npart_total[1] == 0 || npart_total[crosstype] == 0){
+            fprintf(stderr, "Can't cross-correlate types not present in snapshot\n");
+            return 1;
         }
-        else{
-            if(read_fieldize(field,snap,type, box, field_dims))
-                continue;
-        }
-        if(powerspectrum(field_dims,&pl,outfield, outfield, nrbins, power,count,keffs))
-                continue;
-        filename=outdir;
-        filename+="/PK-"+type_str(type)+"-"+infiles.substr(last+1);
-        print_pk(filename,nrbins,keffs,power,count);
+       //Memory for the field
+       /* Allocating a bit more memory allows us to do in-place transforms.*/
+       float * field2;
+       if(!(field2=(float *)fftwf_malloc(2*field_dims*field_dims*(field_dims/2+1)*sizeof(float)))){
+       	fprintf(stderr,"Error allocating memory for second field\n");
+       	return 1;
+       }
+       fftwf_complex * outfield2=(fftwf_complex *) &field2[0];
+       fftwf_plan pl2=fftwf_plan_dft_r2c_3d(field_dims,field_dims,field_dims,&field2[0],outfield2, FFTW_ESTIMATE);
+       //Get the DM
+       if (use_hdf5)
+           for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
+               read_fieldize_hdf5(field, fnames[fileno].c_str(), 1, box, field_dims, fileno);
+       else 
+           read_fieldize(field,snap,1, box, field_dims);
+       //Get the other species
+       if (use_hdf5)
+           for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
+               read_fieldize_hdf5(field2, fnames[fileno].c_str(), crosstype, box, field_dims, fileno);
+       else 
+           read_fieldize(field2,snap,crosstype, box, field_dims);
+       //Do FFT of DM
+	   fftwf_execute(pl);
+       //Do FFT of other species
+	   fftwf_execute(pl2);
+       powerspectrum(field_dims,outfield, outfield2, nrbins, power,count,keffs);
+       filename=outdir;
+       filename+="/PK-DMx"+type_str(crosstype)+"-"+infiles.substr(last+1);
+       //Multiply by a mass factor
+//        for (int i=0; i< nrbins; i++) {
+//            power[i]*= mass[1]/mass[crosstype];
+//        }
+       print_pk(filename,nrbins,keffs,power,count);
   }
 
   //Free memory

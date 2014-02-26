@@ -30,7 +30,7 @@ extern float invwindow(int kx, int ky, int kz, int n);
 /**Little macro to work the storage order of the FFT.*/
 #define KVAL(n) ((n)<=dims/2 ? (n) : ((n)-dims))
 
-int powerspectrum(int dims, fftwf_plan* pl,fftwf_complex *outfield, fftwf_complex *outfield2, int nrbins, float *power, int *count,float *keffs)
+int powerspectrum(int dims, fftwf_complex *outfield, fftwf_complex *outfield2, int nrbins, float *power, int *count,float *keffs)
 {
 	const int dims2=dims*dims;
 	const int dims3=dims2*dims;
@@ -38,7 +38,6 @@ int powerspectrum(int dims, fftwf_plan* pl,fftwf_complex *outfield, fftwf_comple
 	const int binsperunit=nrbins/(floor(sqrt(3)*abs((dims+1.0)/2.0)+1));
 	/*Half the bin width*/
 	const float bwth=1.0/(2.0*binsperunit);
-	fftwf_execute(*pl);
 	/* Now we compute the powerspectrum in each direction.
 	 * FFTW is unnormalised, so we need to scale by the length of the array
 	 * (we do this later). */

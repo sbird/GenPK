@@ -43,9 +43,10 @@ int nexttwo(int n)
 
 void help()
 {
-           fprintf(stderr, "Usage: ./gen-pk -i filenames -o outdir\n"
+           fprintf(stderr, "Usage: ./gen-pk -i filenames -o outdir -c (optional) cross-corr type\n"
                            "Outputs one file per particle type, with the name PK-$TYPE-$INPUT\n"
-                           "Each output file has three columns, for each bin, k_eff, P(k) and N_modes\n");
+                           "Each output file has three columns, for each bin, k_eff, P(k) and N_modes\n"
+                           "If -c is specified the code computes the cross-correlation of that particle type with the CDM (type 1)\n");
            return;
 }
 
