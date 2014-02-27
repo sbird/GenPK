@@ -31,9 +31,6 @@ int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box
          * the one we're trying to read*/
         npart_total=(*snap).GetNpart(type);
         skip_type-=(1<<type);
-        /* Zero the field*/
-        for(int i=0; i<2*field_dims*field_dims*(field_dims/2+1); i++)
-                field[i] = 0;
         /* Add the stars if we are using baryons. */
         if(type==BARYON_TYPE)
                 npart_stars=(*snap).GetNpart(STARS_TYPE);

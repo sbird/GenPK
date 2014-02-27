@@ -30,8 +30,6 @@
  *
  * Use Volker Springel's fold-on-itself to calculate small-scale power below the Nyquist frequency
  *
- * Support "fake" kspace neutrinos.
- *
  * \section usage_sec Usage
  *
  * See:
@@ -48,6 +46,7 @@
  * Boost::Test library >= 1.34 for the test suite
  */
 #include "gen-pk.h"
+#include <string.h>
 #include <math.h>
 //For getopt
 #include <unistd.h>
@@ -171,8 +170,10 @@ int main(int argc, char* argv[])
   if(crosstype < 0){
     /*Now make a power spectrum for each particle type*/
     for(type=0; type<N_TYPE; type++){
+          //Zero field
           if(npart_total[type] == 0)
               continue;
+          memset(field, 0, 2*field_dims*field_dims*(field_dims/2+1)*sizeof(float));
           if (use_hdf5){
               for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
                   read_fieldize_hdf5(field, fnames[fileno].c_str(), type, box, field_dims, fileno);
@@ -181,7 +182,7 @@ int main(int argc, char* argv[])
               if(read_fieldize(field,snap,type, box, field_dims))
                   continue;
           }
-	      fftwf_execute(pl);
+	  fftwf_execute(pl);
           if(powerspectrum(field_dims,outfield, outfield, nrbins, power,count,keffs))
                   continue;
           filename=outdir;
