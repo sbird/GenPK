@@ -104,6 +104,7 @@ int main(int argc, char* argv[])
   /*ffname is a copy of input filename for extension*/
   /*First open first file to get header properties*/
   std::vector<std::string> fnames = find_hdf_set(infiles);
+  fprintf(stderr, "Found %lu files in snapshot\n",fnames.size());
   if ( !fnames.empty() ){
           /*See if we have been handed the first file of a set:
            * our method for dealing with this closely mirrors
@@ -182,7 +183,7 @@ int main(int argc, char* argv[])
               if(read_fieldize(field,snap,type, box, field_dims))
                   continue;
           }
-	  fftwf_execute(pl);
+	      fftwf_execute(pl);
           if(powerspectrum(field_dims,outfield, outfield, nrbins, power,count,keffs))
                   continue;
           filename=outdir;

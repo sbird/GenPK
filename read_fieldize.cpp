@@ -134,33 +134,27 @@ int file_readable(const char * filename)
 std::vector<std::string> find_hdf_set(const std::string& infname)
 {
     unsigned i_fileno=0;
-    int fileno=0;
     std::vector<std::string> files;
     std::string fname = find_first_hdf_file(infname);
-    if ( !fname.empty() ){
-            /*See if we have been handed the first file of a set:
-             * our method for dealing with this closely mirrors
-             * HDF5s family mode, but we cannot use this, because
-             * our files may not all be the same size.*/
-	    i_fileno = fname.find(".0.hdf5")+1;
-        files.push_back(fname);
-    }
-    //Find filename
-    while(true) {
+    if ( fname.empty() )
+        return files;
+    //Add first file
+    files.push_back(fname);
+    //Find position of file index in order to replace it
+	i_fileno = fname.find(".0.hdf5")+1;
+    //If can't find the file index, not a set but a single file.
+    if(i_fileno == std::string::npos)
+        return files;
+    //Find filename, starting at 1
+    for(int fileno = 1; fileno < 1000; fileno++) {
         std::string ffname;
-        if(i_fileno != std::string::npos){
-            std::ostringstream convert;
-            convert<<fileno;
-            ffname = fname.replace(i_fileno, 1, convert.str());
-        }
-        else
-           break;
+        std::ostringstream convert;
+        convert<<fileno;
+        ffname = fname.replace(i_fileno, 1, convert.str());
         /*If we ran out of files, we're done*/
         if(!(file_readable(ffname.c_str()) && H5Fis_hdf5(ffname.c_str()) > 0))
                 break;
-
         files.push_back(ffname);
-        fileno++;
     }
     return files;
 }
