@@ -205,6 +205,8 @@ int main(int argc, char* argv[])
        	fprintf(stderr,"Error allocating memory for second field\n");
        	return 1;
        }
+       memset(field, 0, 2*field_dims*field_dims*(field_dims/2+1)*sizeof(float));
+       memset(field2, 0, 2*field_dims*field_dims*(field_dims/2+1)*sizeof(float));
        fftwf_complex * outfield2=(fftwf_complex *) &field2[0];
        fftwf_plan pl2=fftwf_plan_dft_r2c_3d(field_dims,field_dims,field_dims,&field2[0],outfield2, FFTW_ESTIMATE);
        //Get the DM
