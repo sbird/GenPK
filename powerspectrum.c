@@ -81,13 +81,13 @@ int powerspectrum(int dims, fftwf_complex *outfield, fftwf_complex *outfield2, i
 				int index=indx+indy;
 				float kk=sqrt(pow(KVAL(i),2)+pow(KVAL(j),2));
 				int psindex=floor(binsperunit*kk);
-				powerpriv[psindex]+=(pow(outfield[index][0],2)+pow(outfield2[index][1],2))*pow(invwindow(KVAL(i),KVAL(j),0,dims),2);
+				powerpriv[psindex]+=(outfield[index][0]*outfield2[index][0]+outfield[index][1]*outfield2[index][1])*pow(invwindow(KVAL(i),KVAL(j),0,dims),2);
 				countpriv[psindex]++;
 				/*Now do the k=N/2 mode*/
 				index=indx+indy+dims/2;
 				kk=sqrt(pow(KVAL(i),2)+pow(KVAL(j),2)+pow(KVAL(dims/2),2));
 				psindex=floor(binsperunit*kk);
-				powerpriv[psindex]+=(pow(outfield[index][0],2)+pow(outfield2[index][1],2))*pow(invwindow(KVAL(i),KVAL(j),KVAL(dims/2),dims),2);
+				powerpriv[psindex]+=(outfield[index][0]*outfield2[index][0]+outfield[index][1]*outfield2[index][1])*pow(invwindow(KVAL(i),KVAL(j),KVAL(dims/2),dims),2);
 				countpriv[psindex]++;
 				/*Now do the rest. Because of the symmetry, each mode counts twice.*/
 				for(int k=1; k<dims/2; k++){
@@ -96,7 +96,7 @@ int powerspectrum(int dims, fftwf_complex *outfield, fftwf_complex *outfield2, i
 					psindex=floor(binsperunit*kk);
 					/* Correct for shot noise and window function in IDL. 
 					 * See my notes for the reason why.*/
-					powerpriv[psindex]+=2*(pow(outfield[index][0],2)+pow(outfield2[index][1],2))*pow(invwindow(KVAL(i),KVAL(j),KVAL(k),dims),2);
+					powerpriv[psindex]+=2*(outfield[index][0]*outfield2[index][0]+outfield[index][1]*outfield2[index][1])*pow(invwindow(KVAL(i),KVAL(j),KVAL(k),dims),2);
 					countpriv[psindex]+=2;
 				}
 			}
