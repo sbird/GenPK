@@ -61,10 +61,11 @@ BOOST_AUTO_TEST_CASE(check_powerspectrum)
        float keffs[4];
        fftwf_complex* outfield;
        outfield=(fftwf_complex *) &field[0];
-       fftwf_plan pl=fftwf_plan_dft_r2c_3d(4,4,4,&field[0],outfield, FFTW_ESTIMATE);
        for(int i=0; i<32; i++)
                field[i]+=1;
-       BOOST_REQUIRE_EQUAL(powerspectrum(4,&pl,outfield,4,pow,count,keffs),0);
+       fftwf_plan pl=fftwf_plan_dft_r2c_3d(4,4,4,&field[0],outfield, FFTW_ESTIMATE);
+       fftwf_execute(pl);
+       BOOST_REQUIRE_EQUAL(powerspectrum(4,outfield,outfield,4,pow,count,keffs),0);
        FLOATS_NEAR_TO(keffs[2],2.43421054);
        BOOST_CHECK_EQUAL(count[1],26);
        BOOST_CHECK_EQUAL(count[0],1);
