@@ -58,8 +58,9 @@ int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box
  * @param type Particle type to read
  * @param box Boxsize, in kpc
  * @param field_dims Length of side of the field above.
- * @param fileno number of file to use. */
-int read_fieldize_hdf5(float * field, const char *ffname, int type, double box, int field_dims, int fileno);
+ * @param fileno number of file to use.
+ * @param total_mass Total mass of particles */
+int read_fieldize_hdf5(float * field, const char *ffname, int type, double box, int field_dims, float * total_mass,int fileno);
 
 /* this routine loads header data from the first file of an HDF5 snapshot.*/
 int load_hdf5_header(const char *ffname, double  *atime, double *redshift, double *box100, double *h100, int64_t *npart_all, double * mass);
@@ -79,9 +80,10 @@ extern "C" {
  * @param total_particles Total number of particles that will be placed on the grid. Used for density calculation.
  * @param segment_particles Number of particles to place on the grid in this call. 
  * @param positions Array of particle positions, of size 3*segment_particles (like the output of GetBlocks)
+ * @param masses Array of particle masses, of size segment_particles
  * @param extra If this is 1, assume that the output is about to be handed to an FFTW in-place routine, 
  * and make it skip the last 2 places of the each row in the last dimension */
-int fieldize(double boxsize, int dims, float *out, int64_t total_particles, int64_t segment_particles, float *positions, int extra);
+int fieldize(double boxsize, int dims, float *out, int64_t total_particles, int64_t segment_particles, float *positions, float * masses, int extra);
 
 /** The inverse window function associated with the Cloud-in-cell algorithm.
  * The power spectrum needs to deconvolve this.

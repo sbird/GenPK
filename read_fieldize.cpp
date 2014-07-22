@@ -66,7 +66,7 @@ int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box
                  * is about to be handed to an FFTW in-place routine,
                  * and set skip the last 2 places of the each row in the last dimension
                  * It is important that pos is not longer than max_int */
-                fieldize(box,field_dims,field,npart_total,parts,pos, 1);
+                fieldize(box,field_dims,field,npart_total,parts,pos, NULL, 1);
                 toread-=parts;
                 read+=parts;
         }
@@ -86,7 +86,7 @@ int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box
                         free(pos);
                         return 1;
                 }
-                fieldize(box,field_dims,field,npart_total,npart_stars,pos, 1);
+                fieldize(box,field_dims,field,npart_total,npart_stars,pos,NULL, 1);
         }
         free(pos);
         return 0;
@@ -251,14 +251,13 @@ int load_hdf5_header(const char *ffname, double  *atime, double *redshift, doubl
   
 /* This routine loads particle data from a single HDF5 snapshot file.
  * A snapshot may be distributed into multiple files. */
-int read_fieldize_hdf5(float * field, const char *ffname, int type, double box, int field_dims, int fileno)
+int read_fieldize_hdf5(float * field, const char *ffname, int type, double box, int field_dims, float * total_mass, int fileno)
 {
-//   int i;
   int npart[N_TYPE];
   unsigned int npart_total[N_TYPE];
   double mass[N_TYPE];
-//   int using_mass = 0;
   float *pos=NULL;
+  float *masses=NULL;
   char name[16];
   double Omega0;
   hid_t hdf_group,hdf_file;
@@ -298,16 +297,18 @@ int read_fieldize_hdf5(float * field, const char *ffname, int type, double box, 
   if(length == 0)
           goto exit;
   /* Particle masses  */
-//   if(mass[PARTTYPE])
-//         for(i=0; i< length;i++)
-//            (*P).Mass[i] = mass[PARTTYPE];
-//   else
-//         if (length != get_single_dataset("Masses",(*P).Mass,length,&hdf_group,fileno))
-//              goto exit;
-//         else
-//             using_mass = 1;
+  if(mass[type] != 0){
+        if(!(masses=(float *)malloc(npart[type]*sizeof(float)))){
+                fprintf(stderr,"Error allocating particle memory of %ld MB for type %d\n",npart[type]*sizeof(float)/1024/1024,type);
+                return -1;
+        }
+        if (length != get_single_dataset("Masses",masses,length,&hdf_group,fileno))
+             goto exit;
+        for(int i = 0; i<npart[type]; i++)
+            *total_mass += masses[i];
+  }
 
-  fieldize(box,field_dims,field,npart_total[type],npart[type],pos, 1);
+  fieldize(box,field_dims,field,npart_total[type],npart[type],pos, masses, 1);
 exit:
   H5Gclose(hdf_group);
   H5Fclose(hdf_file);

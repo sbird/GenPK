@@ -43,14 +43,13 @@
  * is about to be handed to an FFTW in-place routine, 
  * and skip the last 2 places of each row in the last dimension (of out)
  */
-int fieldize(double boxsize, int dims, float *out, int64_t total_particles, int64_t segment_particles, float *positions,int extra)
+int fieldize(double boxsize, int dims, float *out, int64_t total_particles, int64_t segment_particles, float *positions, float * masses, int extra)
 {
 	const int dims3=pow(dims,3);
 	const int fdims=2*(dims/2+extra);
 	/*If extra is on, we want to leave space for FFTW 
 	 * to put the extra bits, so skip a couple of places.*/
 	const int dims2=fdims*dims;
-	const float invrho=dims3/(float)total_particles;
 	const float units=dims/boxsize;
 	/* This is one over density.*/
 	#pragma omp parallel for
@@ -59,17 +58,22 @@ int fieldize(double boxsize, int dims, float *out, int64_t total_particles, int6
 		int fx[3],nex[3],temp2[IL][8];
                 int il=(index+IL<segment_particles ? IL : segment_particles-index);
 		for(int k=0; k<il; k++){
+	        float invrho=dims3;
+            if(masses)
+                invrho *= masses[index+k];
+            else
+                invrho /= (float)total_particles;
 			for(int i=0; i<3; i++){
 				x[i]=positions[3*(index+k)+i]*units;	
 				fx[i]=floor(x[i]);
 				dx[i]=x[i]-fx[i];
 				tx[i]=1.0-dx[i];
 				nex[i]=(fx[i]+1)%dims;
-                                if(nex[i]<0) 
-                                        nex[i]+=dims;
-		        	fx[i]%=dims;
-                                if(fx[i]<0)
-                                        fx[i]+=dims;
+                if(nex[i]<0) 
+                        nex[i]+=dims;
+		        fx[i]%=dims;
+                if(fx[i]<0)
+                        fx[i]+=dims;
 			}
 			temp[k][0]=invrho*tx[0]*tx[1]*tx[2];
 			temp[k][1]=invrho*dx[0]*tx[1]*tx[2];

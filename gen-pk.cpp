@@ -145,8 +145,9 @@ int main(int argc, char* argv[])
   }
   nrbins=floor(sqrt(3)*((field_dims+1.0)/2.0)+1);
   //Memory for the field
+  size_t field_size = 2*field_dims*field_dims*(field_dims/2+1);
   /* Allocating a bit more memory allows us to do in-place transforms.*/
-  if(!(field=(float *)fftwf_malloc(2*field_dims*field_dims*(field_dims/2+1)*sizeof(float)))){
+  if(!(field=(float *)fftwf_malloc(field_size*sizeof(float)))){
   	fprintf(stderr,"Error allocating memory for field\n");
   	return 1;
   }
@@ -174,10 +175,17 @@ int main(int argc, char* argv[])
           //Zero field
           if(npart_total[type] == 0)
               continue;
-          memset(field, 0, 2*field_dims*field_dims*(field_dims/2+1)*sizeof(float));
+          memset(field, 0, field_size*sizeof(float));
           if (use_hdf5){
+              float total_mass = 0;
               for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
-                  read_fieldize_hdf5(field, fnames[fileno].c_str(), type, box, field_dims, fileno);
+                  read_fieldize_hdf5(field, fnames[fileno].c_str(), type, box, field_dims, &total_mass, fileno);
+              //Correct for mass
+              if(total_mass > 0){
+                  #pragma omp parallel for
+                  for(size_t jj = 0; jj < field_size; jj++)
+                    field[jj] /= total_mass;
+              }
           }
           else{
               if(read_fieldize(field,snap,type, box, field_dims))
@@ -201,24 +209,38 @@ int main(int argc, char* argv[])
        //Memory for the field
        /* Allocating a bit more memory allows us to do in-place transforms.*/
        float * field2;
-       if(!(field2=(float *)fftwf_malloc(2*field_dims*field_dims*(field_dims/2+1)*sizeof(float)))){
+       if(!(field2=(float *)fftwf_malloc(field_size*sizeof(float)))){
        	fprintf(stderr,"Error allocating memory for second field\n");
        	return 1;
        }
-       memset(field, 0, 2*field_dims*field_dims*(field_dims/2+1)*sizeof(float));
-       memset(field2, 0, 2*field_dims*field_dims*(field_dims/2+1)*sizeof(float));
+       memset(field, 0, field_size*sizeof(float));
+       memset(field2, 0, field_size*sizeof(float));
        fftwf_complex * outfield2=(fftwf_complex *) &field2[0];
        fftwf_plan pl2=fftwf_plan_dft_r2c_3d(field_dims,field_dims,field_dims,&field2[0],outfield2, FFTW_ESTIMATE);
        //Get the DM
-       if (use_hdf5)
+       if (use_hdf5){
+           float total_mass = 0;
            for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
-               read_fieldize_hdf5(field, fnames[fileno].c_str(), 1, box, field_dims, fileno);
+               read_fieldize_hdf5(field, fnames[fileno].c_str(), 1, box, field_dims, &total_mass, fileno);
+           if (total_mass > 0){
+       	        fprintf(stderr,"Dark matter should not have variable mass\n");
+       	        return 1;
+           }
+       }
        else 
            read_fieldize(field,snap,1, box, field_dims);
        //Get the other species
-       if (use_hdf5)
+       if (use_hdf5){
+           float total_mass = 0;
            for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
-               read_fieldize_hdf5(field2, fnames[fileno].c_str(), crosstype, box, field_dims, fileno);
+               read_fieldize_hdf5(field2, fnames[fileno].c_str(), crosstype, box, field_dims, &total_mass, fileno);
+              //Correct for mass
+              if(total_mass > 0){
+                  #pragma omp parallel for
+                  for(size_t jj = 0; jj < field_size; jj++)
+                    field[jj] /= total_mass;
+              }
+       }
        else 
            read_fieldize(field2,snap,crosstype, box, field_dims);
        //Do FFT of DM
