@@ -297,15 +297,21 @@ int read_fieldize_hdf5(float * field, const char *ffname, int type, double box, 
   if(length == 0)
           goto exit;
   /* Particle masses  */
-  if(mass[type] != 0){
-        if(!(masses=(float *)malloc(npart[type]*sizeof(float)))){
-                fprintf(stderr,"Error allocating particle memory of %ld MB for type %d\n",npart[type]*sizeof(float)/1024/1024,type);
-                return -1;
-        }
+  if(!(masses=(float *)malloc(npart[type]*sizeof(float)))){
+          fprintf(stderr,"Error allocating particle memory of %ld MB for type %d\n",npart[type]*sizeof(float)/1024/1024,type);
+          return -1;
+  }
+  if(mass[type] == 0){
         if (length != get_single_dataset("Masses",masses,length,&hdf_group,fileno))
              goto exit;
         for(int i = 0; i<npart[type]; i++)
             *total_mass += masses[i];
+  }
+  else {
+        for(int i = 0; i<npart[type]; i++){
+            masses[i] = mass[type];
+            *total_mass += masses[i];
+        }
   }
 
   fieldize(box,field_dims,field,npart_total[type],npart[type],pos, masses, 1);
