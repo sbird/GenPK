@@ -35,7 +35,10 @@ BOOST_AUTO_TEST_CASE(check_fieldize)
         float pos[30];
         for(int i=0; i<30; i++)
                 pos[i]=i/3.;
-        fieldize(10, dims,field,10,10,pos,1);
+        float masses[30];
+        for(int i=0; i<30; i++)
+                masses[i]=1/10.;
+        fieldize(10, dims,field,10,10,pos,masses,1);
         //Check off-diagonal elements are zero
         FLOATS_NEAR_TO(field[0],10.7638874);
         BOOST_CHECK_EQUAL(field[3],0);
