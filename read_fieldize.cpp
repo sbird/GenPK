@@ -12,7 +12,7 @@
 
 #define MIN(a,b) ( (a) < (b) ? (a) : (b))
 /** \file 
- * Defines read_fieldize() , wraps fieldize() and GadgetReader*/
+ * Defines read_fieldize() , wraps fieldize() and GadgetReader */
 
 /** read_fieldize: reads particles from a Gadget format particle catalogue and places them on a grid, using cloud-in-cell*/
 int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box, int field_dims)
@@ -20,7 +20,7 @@ int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box
         int64_t npart_total,toread;
         int parts=0;
         int64_t npart_stars=0,read=0;
-        float *pos=NULL;
+        FLOAT_TYPE *pos=NULL;
         //Initially set it to skip all types
         int skip_type=(1<<N_TYPE)-1;
         /*Stars are another type of baryons*/
@@ -34,11 +34,16 @@ int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box
         /* Add the stars if we are using baryons. */
         if(type==BARYON_TYPE)
                 npart_stars=(*snap).GetNpart(STARS_TYPE);
+        int64_t partlen = snap->GetBlockSize("POS ",-1) / snap->GetBlockParts("POS ");
+        if ( partlen != 3*sizeof(FLOAT_TYPE) ) {
+            fprintf(stderr, "The pos array uses %ld bytes per particle, instead of %lu.\n You probably want to recompile a different DOUBLE_PRECISION define.\n", partlen, 3*sizeof(FLOAT_TYPE));
+            exit(1);
+        }
         /* Try to allocate enough memory for particle table.
          * Maximum allocation of 512**3/2 particles ~ 768MB. */
         parts=MIN(npart_total,(1<<26));
-        while(!(pos=(float *)malloc(3*parts*sizeof(float)))){
-                fprintf(stderr,"Error allocating particle memory of %ld MB for type %d\n",3*parts*sizeof(float)/1024/1024,type);
+        while(!(pos=(FLOAT_TYPE *)malloc(3*parts*sizeof(FLOAT_TYPE)))){
+                fprintf(stderr,"Error allocating particle memory of %ld MB for type %d\n",3*parts*sizeof(FLOAT_TYPE)/1024/1024,type);
                 return 1;
         }
         toread=npart_total;
@@ -75,8 +80,8 @@ int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box
                 /*Re-allocate in case there are more stars than baryons (unlikely)*/
                 if(npart_stars > parts){
                         free(pos);
-                        while(!(pos=(float *)malloc(3*npart_stars*sizeof(float)))){
-                                        fprintf(stderr,"Error allocating particle memory of %ld MB for type %d\n",3*npart_stars*sizeof(float)/1024/1024,type);
+                        while(!(pos=(FLOAT_TYPE *)malloc(3*npart_stars*sizeof(FLOAT_TYPE)))){
+                                        fprintf(stderr,"Error allocating particle memory of %ld MB for type %d\n",3*npart_stars*sizeof(FLOAT_TYPE)/1024/1024,type);
                                         return 1;
                         }
                 }
@@ -159,9 +164,14 @@ std::vector<std::string> find_hdf_set(const std::string& infname)
     return files;
 }
 
+#ifdef DOUBLE_PRECISION
+    #define H5_DATASET_READ H5LTread_dataset_double
+#else
+    #define H5_DATASET_READ H5LTread_dataset_float
+#endif
 
 /*Routine that is a wrapper around HDF5's dataset access routines to do error checking. Returns the length on success, 0 on failure.*/
-hsize_t get_single_dataset(const char *name, float * data_ptr,  hsize_t data_length, hid_t * hdf_group,int fileno)
+hsize_t get_single_dataset(const char *name, FLOAT_TYPE * data_ptr,  hsize_t data_length, hid_t * hdf_group,int fileno)
 {
           int rank;
           hsize_t vlength;
@@ -172,7 +182,7 @@ hsize_t get_single_dataset(const char *name, float * data_ptr,  hsize_t data_len
              return 0;
           }
           H5LTget_dataset_info(*hdf_group, name, &vlength, &class_id, &type_size);
-          if(type_size != 4 || class_id != H5T_FLOAT  || vlength > data_length || H5LTread_dataset_float(*hdf_group, name, data_ptr) < 0 ){
+          if(type_size != 4 || class_id != H5T_FLOAT  || vlength > data_length || H5_DATASET_READ(*hdf_group, name, data_ptr) < 0 ){
               fprintf(stderr, "File %d: Failed reading %s (%lu)\n",fileno,name, (uint64_t)vlength);
               return 0;
           }
@@ -180,7 +190,7 @@ hsize_t get_single_dataset(const char *name, float * data_ptr,  hsize_t data_len
 }
 
 /*A similar wrapper around HDF5's dataset access routines to do error checking. Returns the length on success, 0 on failure.*/
-hsize_t get_triple_dataset(const char *name, float * data_ptr, hsize_t data_length, hid_t * hdf_group,int fileno)
+hsize_t get_triple_dataset(const char *name, FLOAT_TYPE * data_ptr, hsize_t data_length, hid_t * hdf_group,int fileno)
 {
           int rank;
           hsize_t vlength[2];
@@ -191,7 +201,7 @@ hsize_t get_triple_dataset(const char *name, float * data_ptr, hsize_t data_leng
              return 0;
           }
           H5LTget_dataset_info(*hdf_group, name, &vlength[0], &class_id, &type_size);
-          if(type_size != 4 || class_id != H5T_FLOAT || vlength[1] != 3 || vlength[0] > data_length || H5LTread_dataset_float(*hdf_group, name, data_ptr) < 0 ){
+          if(type_size != 4 || class_id != H5T_FLOAT || vlength[1] != 3 || vlength[0] > data_length || H5_DATASET_READ(*hdf_group, name, data_ptr) < 0 ){
               fprintf(stderr, "File %d: Failed reading %s (%lu)\n",fileno,name, (uint64_t)vlength[0]);
               return 0;
           }
@@ -256,8 +266,8 @@ int read_fieldize_hdf5(float * field, const char *ffname, int type, double box, 
   int npart[N_TYPE];
   unsigned int npart_total[N_TYPE];
   double mass[N_TYPE];
-  float *pos=NULL;
-  float *masses=NULL;
+  FLOAT_TYPE *pos=NULL;
+  FLOAT_TYPE *masses=NULL;
   char name[16];
   double Omega0;
   hid_t hdf_group,hdf_file;
@@ -279,8 +289,8 @@ int read_fieldize_hdf5(float * field, const char *ffname, int type, double box, 
       H5Fclose(hdf_file);
       return -1;
   }
-  if(!(pos=(float *)malloc(3*npart[type]*sizeof(float)))){
-          fprintf(stderr,"Error allocating particle memory of %ld MB for type %d\n",3*npart[type]*sizeof(float)/1024/1024,type);
+  if(!(pos=(FLOAT_TYPE *)malloc(3*npart[type]*sizeof(FLOAT_TYPE)))){
+          fprintf(stderr,"Error allocating particle memory of %ld MB for type %d\n",3*npart[type]*sizeof(FLOAT_TYPE)/1024/1024,type);
           return -1;
   }
   H5Gclose(hdf_group);
@@ -297,8 +307,8 @@ int read_fieldize_hdf5(float * field, const char *ffname, int type, double box, 
   if(length == 0)
           goto exit;
   /* Particle masses  */
-  if(!(masses=(float *)malloc(npart[type]*sizeof(float)))){
-          fprintf(stderr,"Error allocating particle memory of %ld MB for type %d\n",npart[type]*sizeof(float)/1024/1024,type);
+  if(!(masses=(FLOAT_TYPE *)malloc(npart[type]*sizeof(FLOAT_TYPE)))){
+          fprintf(stderr,"Error allocating particle memory of %ld MB for type %d\n",npart[type]*sizeof(FLOAT_TYPE)/1024/1024,type);
           return -1;
   }
   if(mass[type] == 0){

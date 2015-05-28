@@ -2,6 +2,9 @@
 #Change this to where you installed GadgetReader
 GREAD=${CURDIR}/../GadgetReader
 
+#If Gadget was compiled with double precision output, you should define this flag
+#to read it correctly
+#OPT = -DDOUBLE_PRECISION
 
 ifeq ($(CC),cc)
   ICC:=$(shell which icc --tty-only 2>&1)
@@ -22,10 +25,10 @@ endif
 LFLAGS += -lfftw3f_threads -lfftw3f -lpthread -lrgad -L${GREAD} -Wl,-rpath,$(GREAD) -lhdf5 -lhdf5_hl
 #Are we using gcc or icc?
 ifeq (icc,$(findstring icc,${CC}))
-  CFLAGS +=-O2 -g -c -w1 -openmp -I${GREAD}
+  CFLAGS +=-O2 -g -c -w1 -openmp $(OPT) -I${GREAD}
   LINK +=${CXX} -openmp
 else
-  CFLAGS +=-O2 -g -c -Wall -fopenmp -I${GREAD}
+  CFLAGS +=-O2 -g -c -Wall -fopenmp $(OPT) -I${GREAD}
   LINK +=${CXX} -openmp $(PRO)
   LFLAGS += -lm -lgomp 
 endif
@@ -49,7 +52,7 @@ utils.o: utils.cpp
 gen-pk.o:gen-pk.cpp gen-pk.h 
 
 btest: test.cpp ${objs}
-	${LINK} -I${GREAD} ${LFLAGS} -lboost_unit_test_framework $^ -o $@
+	${LINK} $(OPT) -I${GREAD} ${LFLAGS} -lboost_unit_test_framework $^ -o $@
 
 test: btest
 	@./btest

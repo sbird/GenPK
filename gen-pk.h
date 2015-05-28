@@ -21,6 +21,12 @@
 #include "gadgetreader.hpp"
 #include <string>
 
+#ifdef DOUBLE_PRECISION
+    #define FLOAT_TYPE double
+#else
+    #define FLOAT_TYPE float
+#endif
+
 /** Returns the next power of two greater than its argument*/
 int nexttwo(int);
 
@@ -80,7 +86,7 @@ std::vector<std::string> find_hdf_set(const std::string& infname);
  * @param masses Array of particle masses, of size segment_particles
  * @param extra If this is 1, assume that the output is about to be handed to an FFTW in-place routine, 
  * and make it skip the last 2 places of the each row in the last dimension */
-int fieldize(double boxsize, int dims, float *out, int64_t total_particles, int64_t segment_particles, float *positions, float * masses, int extra);
+int fieldize(double boxsize, int dims, float *out, int64_t total_particles, int64_t segment_particles, FLOAT_TYPE *positions, FLOAT_TYPE * masses, int extra);
 
 #ifdef __cplusplus
 extern "C" {
