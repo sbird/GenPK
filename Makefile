@@ -43,7 +43,7 @@ gen-pk: gen-pk.o ${objs}
 	${LINK} ${LFLAGS} $^ -o $@
 
 powerspectrum.o: powerspectrum.c gen-pk.h
-fieldize.o:fieldize.c 
+fieldize.o:fieldize.cpp gen-pk.h
 read_fieldize.o: read_fieldize.cpp gen-pk.h
 utils.o: utils.cpp
 gen-pk.o:gen-pk.cpp gen-pk.h 
@@ -54,7 +54,7 @@ btest: test.cpp ${objs}
 test: btest
 	@./btest
 
-dist: Makefile README $(head) Doxyfile gen-pk.cpp  read_fieldize.cpp  test.cpp  utils.cpp gen-pk.h fieldize.c powerspectrum.c test_g2_snap.0 test_g2_snap.1
+dist: Makefile README $(head) Doxyfile gen-pk.cpp  read_fieldize.cpp  test.cpp  utils.cpp gen-pk.h fieldize.cpp powerspectrum.c test_g2_snap.0 test_g2_snap.1
 	tar -czf genpk.tar.gz $^
 
 doc: Doxyfile gen-pk.h

@@ -15,8 +15,9 @@
 /* Fieldize. positions should be an array of size 3*segment_particles 
  * (like the output of read_gadget_float3)
  * out is an array of size [dims*dims*dims]*/
-#include <math.h>
+#include <cmath>
 #include <stdint.h>
+#include "gen-pk.h"
 
 /** Number of particles to keep in the thread-local buffer*/
 #define IL 64

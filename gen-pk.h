@@ -69,9 +69,6 @@ int load_hdf5_header(const char *ffname, double  *atime, double *redshift, doubl
  */
 std::vector<std::string> find_hdf_set(const std::string& infname);
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 /** Takes an array of particle positions and places them into a grid, ready for use by FFTW.
  * OpenMP-parallel. Returns 0. Uses a Cloud-In-Cell algorithm.
  * @param boxsize The size of the box, in kpc.
@@ -85,6 +82,9 @@ extern "C" {
  * and make it skip the last 2 places of the each row in the last dimension */
 int fieldize(double boxsize, int dims, float *out, int64_t total_particles, int64_t segment_particles, float *positions, float * masses, int extra);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 /** The inverse window function associated with the Cloud-in-cell algorithm.
  * The power spectrum needs to deconvolve this.
  * @param kx k_x
