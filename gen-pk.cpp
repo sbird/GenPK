@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
   int *count;
   int64_t npart_total[N_TYPE];
   double mass[N_TYPE];
-  string infiles(""),outdir("");
+  string infiles(""),jinfiles(""),outdir("");
   char c;
   int crosstype = -1;
   double box;
@@ -83,13 +83,16 @@ int main(int argc, char* argv[])
   bool use_hdf5 = false;
   fftwf_plan pl;
   fftwf_complex *outfield;
-  while((c = getopt(argc, argv, "i:o:c:h")) !=-1){
+  while((c = getopt(argc, argv, "i:j:o:c:h")) !=-1){
     switch(c){
         case 'o':
            outdir=static_cast<string>(optarg);
            break;
         case 'i':
            infiles=static_cast<string>(optarg);
+           break;
+        case 'j':	      
+	   jinfiles=static_cast<string>(optarg);
            break;
         case 'c':
            crosstype = static_cast<int>(atoi(optarg));
@@ -169,7 +172,7 @@ int main(int argc, char* argv[])
   	fprintf(stderr,"Error allocating memory for power spectrum.\n");
         return 1;
   }
-  if(crosstype < 0){
+  if  ((crosstype < 0) && (jinfiles.size()==0)) {
     /*Now make a power spectrum for each particle type*/
     for(type=0; type<N_TYPE; type++){
           //Zero field
@@ -198,10 +201,43 @@ int main(int argc, char* argv[])
           filename+="/PK-"+type_str(type)+"-"+infiles.substr(last+1);
           print_pk(filename,nrbins,keffs,power,count);
     }
+  } else if (jinfiles.size()>0)  {
+  // do cross correlation across two files
+    GSnap * snap2 = new GSnap(jinfiles);
+
+    /*Now make a power spectrum for each particle type*/
+    for(type=0; type<N_TYPE; type++){
+          if(npart_total[type] == 0)
+              continue;
+          //Memory for the field
+          /* Allocating a bit more memory allows us to do in-place transforms.*/
+          float * field2;
+          if(!(field2=(float *)fftwf_malloc(field_size*sizeof(float)))){
+            fprintf(stderr,"Error allocating memory for second field\n");
+            return 1;
+          }
+          memset(field, 0, field_size*sizeof(float));
+          memset(field2, 0, field_size*sizeof(float));
+          fftwf_complex * outfield2=(fftwf_complex *) &field2[0];
+          fftwf_plan pl2=fftwf_plan_dft_r2c_3d(field_dims,field_dims,field_dims,&field2[0],outfield2, FFTW_ESTIMATE);
+
+          fprintf(stderr,"Reading...\n");
+          if(read_fieldize(field,snap,type, box, field_dims))
+            continue;
+          if(read_fieldize(field2,snap2,type, box, field_dims))
+            continue;
+          fftwf_execute(pl);
+          fftwf_execute(pl2);
+          if(powerspectrum(field_dims,outfield, outfield2, nrbins, power,count,keffs))
+                  continue;
+          filename=outdir;
+          filename+="/PX-"+type_str(type)+"-"+infiles.substr(last+1);
+          print_pk(filename,nrbins,keffs,power,count);
+    }
   }
-  //Do a cross-correlation
   else
   {
+      //Do a cross-correlation inside the file
         if(crosstype > N_TYPE || npart_total[1] == 0 || npart_total[crosstype] == 0){
             fprintf(stderr, "Can't cross-correlate types not present in snapshot\n");
             return 1;
