@@ -202,9 +202,21 @@ int main(int argc, char* argv[])
           print_pk(filename,nrbins,keffs,power,count);
     }
   } else if (jinfiles.size()>0)  {
-  // do cross correlation across two files
-    GSnap * snap2 = new GSnap(jinfiles);
-
+    // do cross correlation across two files
+    bool use_hdf52=false;
+    GSnap * snap2 = NULL;
+    #ifndef NOHDF5
+    std::vector<std::string> fnames2 = find_hdf_set(jinfiles);
+    if ( !fnames2.empty() ){
+        /*See if we have been handed the first file of a set:
+         * our method for dealing with this closely mirrors
+         * HDF5s family mode, but we cannot use this, because
+         * our files may not all be the same size.*/
+        use_hdf52 = true;
+    }
+    else
+    #endif
+        snap2 = new GSnap(jinfiles);
     /*Now make a power spectrum for each particle type*/
     for(type=0; type<N_TYPE; type++){
           if(npart_total[type] == 0)
@@ -222,9 +234,21 @@ int main(int argc, char* argv[])
           fftwf_plan pl2=fftwf_plan_dft_r2c_3d(field_dims,field_dims,field_dims,&field2[0],outfield2, FFTW_ESTIMATE);
 
           fprintf(stderr,"Reading...\n");
-          if(read_fieldize(field,snap,type, box, field_dims))
+          //Get the new filename if HDF5
+          if (use_hdf52){
+              float total_mass = 0;
+              for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
+                  read_fieldize_hdf5(field, fnames[fileno].c_str(), 1, box, field_dims, &total_mass, fileno);
+          }
+          else if(read_fieldize(field,snap,type, box, field_dims))
             continue;
-          if(read_fieldize(field2,snap2,type, box, field_dims))
+          //Get the new filename if HDF5
+          if (use_hdf52){
+              float total_mass = 0;
+              for(unsigned fileno = 0; fileno < fnames2.size(); ++fileno)
+                  read_fieldize_hdf5(field2, fnames2[fileno].c_str(), 1, box, field_dims, &total_mass, fileno);
+          }
+          else if(read_fieldize(field2,snap2,type, box, field_dims))
             continue;
           fftwf_execute(pl);
           fftwf_execute(pl2);
