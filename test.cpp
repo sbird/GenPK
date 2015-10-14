@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(check_powerspectrum)
 
 BOOST_AUTO_TEST_CASE(check_read_fieldize)
 {
-        float field[2*4*4*(4/2+1)];
+        float field[2*4*4*(4/2+1)]={0};
         GSnap snap("test_g2_snap", false);
         BOOST_REQUIRE_MESSAGE(snap.GetNumFiles()==2,"Failed to find test snapshot data");
         BOOST_REQUIRE_EQUAL(read_fieldize(field, &snap, BARYON_TYPE, 3000,4),0);
