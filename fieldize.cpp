@@ -44,7 +44,6 @@
  */
 int fieldize(double boxsize, int dims, float *out, int64_t segment_particles, FLOAT_TYPE *positions, FLOAT_TYPE * masses, double mass, int extra)
 {
-    const int dims3=pow(dims,3);
     const int fdims=2*(dims/2+extra);
     /*If extra is on, we want to leave space for FFTW
      * to put the extra bits, so skip a couple of places.*/
@@ -58,11 +57,7 @@ int fieldize(double boxsize, int dims, float *out, int64_t segment_particles, FL
         for(int k=0; k<il; k++)
         {
             /* This is one over density.*/
-            float invrho=dims3;
-                if(masses)
-                    invrho *= masses[index+k];
-                else if(mass > 0)
-                    invrho *= mass;
+            const float invrho = (masses ? masses[index+k] : mass);
             for(int i=0; i<3; i++)
             {
                 x[i]=positions[3*(index+k)+i]*units;

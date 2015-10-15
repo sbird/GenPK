@@ -184,12 +184,7 @@ int main(int argc, char* argv[])
               double total_mass = 0;
               for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
                   read_fieldize_hdf5(field, fnames[fileno].c_str(), type, box, field_dims, &total_mass, fileno);
-              //Correct for mass
-              if(total_mass > 0){
-                  #pragma omp parallel for
-                  for(size_t jj = 0; jj < field_size; jj++)
-                    field[jj] /= total_mass;
-              }
+              printf("total_mass in type %d = %g\n", type, total_mass);
           }
           else{
               if(read_fieldize(field,snap,type, box, field_dims))
@@ -283,10 +278,6 @@ int main(int argc, char* argv[])
            double total_mass = 0;
            for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
                read_fieldize_hdf5(field, fnames[fileno].c_str(), 1, box, field_dims, &total_mass, fileno);
-           if (total_mass > 0){
-       	        fprintf(stderr,"Dark matter should not have variable mass\n");
-       	        return 1;
-           }
        }
        else 
            read_fieldize(field,snap,1, box, field_dims);
@@ -295,12 +286,6 @@ int main(int argc, char* argv[])
            double total_mass = 0;
            for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
                read_fieldize_hdf5(field2, fnames[fileno].c_str(), crosstype, box, field_dims, &total_mass, fileno);
-              //Correct for mass
-              if(total_mass > 0){
-                  #pragma omp parallel for
-                  for(size_t jj = 0; jj < field_size; jj++)
-                    field[jj] /= total_mass;
-              }
        }
        else 
            read_fieldize(field2,snap,crosstype, box, field_dims);
