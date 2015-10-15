@@ -83,10 +83,11 @@ std::vector<std::string> find_hdf_set(const std::string& infname);
  * @param total_particles Total number of particles that will be placed on the grid. Used for density calculation.
  * @param segment_particles Number of particles to place on the grid in this call. 
  * @param positions Array of particle positions, of size 3*segment_particles (like the output of GetBlocks)
- * @param masses Array of particle masses, of size segment_particles
+ * @param masses Array containing particle masses, if variable. Null if particle masses are constant.
+ * @param mass Particle mass if constant for all of this type.
  * @param extra If this is 1, assume that the output is about to be handed to an FFTW in-place routine, 
  * and make it skip the last 2 places of the each row in the last dimension */
-int fieldize(double boxsize, int dims, float *out, int64_t total_particles, int64_t segment_particles, FLOAT_TYPE *positions, FLOAT_TYPE * masses, int extra);
+int fieldize(double boxsize, int dims, float *out, int64_t segment_particles, FLOAT_TYPE *positions, FLOAT_TYPE * masses, double mass, int extra);
 
 #ifdef __cplusplus
 extern "C" {

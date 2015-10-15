@@ -34,17 +34,15 @@
  * @param dims The number of grid points to use
  * @param out Pointer to the grid to interpolate onto. 
  *          Should be an array of size dims^3 (or slightly larger if extra is set, see below.
- * @param total_particles The total number of particles we are ultimately going to interpolate onto this grid.
- *                        This is used to set the particle weights, and is different from segment_particles
- *                        to support calling fieldize multiple times on sections of the total particle list
- *                        (thus you can save memory by not loading the whole particle list at once).
  * @param segment_particles The number of particles to interpolate on this call. The length of the positions array.
  * @param positions Array of particle positions. Assumed to have dimensions 3*segment_particles
+ * @param masses Array containing particle masses, if variable. Null if particle masses are constant.
+ * @param mass Particle mass if constant for all of this type.
  * @param extra This switch should be 0 or 1. If set to one, will assume that the output 
  * is about to be handed to an FFTW in-place routine, 
  * and skip the last 2 places of each row in the last dimension (of out)
  */
-int fieldize(double boxsize, int dims, float *out, int64_t total_particles, int64_t segment_particles, FLOAT_TYPE *positions, FLOAT_TYPE * masses, int extra)
+int fieldize(double boxsize, int dims, float *out, int64_t segment_particles, FLOAT_TYPE *positions, FLOAT_TYPE * masses, double mass, int extra)
 {
 	const int dims3=pow(dims,3);
 	const int fdims=2*(dims/2+extra);
@@ -53,17 +51,17 @@ int fieldize(double boxsize, int dims, float *out, int64_t total_particles, int6
 	const int dims2=fdims*dims;
 	const float units=dims/boxsize;
 	#pragma omp parallel for
-	for(int index=0;index<segment_particles;index+=IL){
+	for(int index=0;index<segment_particles;index+=IL) {
 		float dx[3],tx[3], x[3], temp[IL][8];
 		int fx[3],nex[3],temp2[IL][8];
-        const int il=(index+IL<segment_particles ? IL : segment_particles-index);
+                const int il=(index+IL<segment_particles ? IL : segment_particles-index);
 		for(int k=0; k<il; k++){
 	        /* This is one over density.*/
 	        float invrho=dims3;
-            if(masses)
-                invrho *= masses[index+k];
-            else
-                invrho /= (float)total_particles;
+                if(masses)
+                    invrho *= masses[index+k];
+                else if(mass > 0)
+                    invrho *= mass;
 			for(int i=0; i<3; i++){
 				x[i]=positions[3*(index+k)+i]*units;	
 				fx[i]=floor(x[i]);
