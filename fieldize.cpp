@@ -38,76 +38,79 @@
  * @param positions Array of particle positions. Assumed to have dimensions 3*segment_particles
  * @param masses Array containing particle masses, if variable. Null if particle masses are constant.
  * @param mass Particle mass if constant for all of this type.
- * @param extra This switch should be 0 or 1. If set to one, will assume that the output 
+ * @param extra This switch should be 0 or 1. If set to one, will assume that the output
  * is about to be handed to an FFTW in-place routine, 
  * and skip the last 2 places of each row in the last dimension (of out)
  */
 int fieldize(double boxsize, int dims, float *out, int64_t segment_particles, FLOAT_TYPE *positions, FLOAT_TYPE * masses, double mass, int extra)
 {
-	const int dims3=pow(dims,3);
-	const int fdims=2*(dims/2+extra);
-	/*If extra is on, we want to leave space for FFTW 
-	 * to put the extra bits, so skip a couple of places.*/
-	const int dims2=fdims*dims;
-	const float units=dims/boxsize;
-	#pragma omp parallel for
-	for(int index=0;index<segment_particles;index+=IL) {
-		float dx[3],tx[3], x[3], temp[IL][8];
-		int fx[3],nex[3],temp2[IL][8];
+    const int dims3=pow(dims,3);
+    const int fdims=2*(dims/2+extra);
+    /*If extra is on, we want to leave space for FFTW
+     * to put the extra bits, so skip a couple of places.*/
+    const int dims2=fdims*dims;
+    const float units=dims/boxsize;
+    #pragma omp parallel for
+    for(int index=0;index<segment_particles;index+=IL) {
+        float dx[3],tx[3], x[3], temp[IL][8];
+        int fx[3],nex[3],temp2[IL][8];
                 const int il=(index+IL<segment_particles ? IL : segment_particles-index);
-		for(int k=0; k<il; k++){
-	        /* This is one over density.*/
-	        float invrho=dims3;
+        for(int k=0; k<il; k++)
+        {
+            /* This is one over density.*/
+            float invrho=dims3;
                 if(masses)
                     invrho *= masses[index+k];
                 else if(mass > 0)
                     invrho *= mass;
-			for(int i=0; i<3; i++){
-				x[i]=positions[3*(index+k)+i]*units;	
-				fx[i]=floor(x[i]);
-				dx[i]=x[i]-fx[i];
-				tx[i]=1.0-dx[i];
-				nex[i]=(fx[i]+1)%dims;
+            for(int i=0; i<3; i++)
+            {
+                x[i]=positions[3*(index+k)+i]*units;
+                fx[i]=floor(x[i]);
+                dx[i]=x[i]-fx[i];
+                tx[i]=1.0-dx[i];
+                nex[i]=(fx[i]+1)%dims;
                 if(nex[i]<0) 
-                        nex[i]+=dims;
-		        fx[i]%=dims;
+                    nex[i]+=dims;
+                fx[i]%=dims;
                 if(fx[i]<0)
-                        fx[i]+=dims;
-			}
-			temp[k][0]=invrho*tx[0]*tx[1]*tx[2];
-			temp[k][1]=invrho*dx[0]*tx[1]*tx[2];
-			temp[k][2]=invrho*tx[0]*dx[1]*tx[2];
-			temp[k][3]=invrho*dx[0]*dx[1]*tx[2];
-			temp[k][4]=invrho*tx[0]*tx[1]*dx[2];
-			temp[k][5]=invrho*dx[0]*tx[1]*dx[2];
-			temp[k][6]=invrho*tx[0]*dx[1]*dx[2];
-			temp[k][7]=invrho*dx[0]*dx[1]*dx[2];
-			temp2[k][0]=dims2*fx[0] +fdims*fx[1] + fx[2];
-			temp2[k][1]=dims2*nex[0]+fdims*fx[1] + fx[2];
-			temp2[k][2]=dims2*fx[0] +fdims*nex[1]+ fx[2];
-			temp2[k][3]=dims2*nex[0]+fdims*nex[1]+ fx[2];
-			temp2[k][4]=dims2*fx[0] +fdims*fx[1] +nex[2];
-			temp2[k][5]=dims2*nex[0]+fdims*fx[1] +nex[2];
-			temp2[k][6]=dims2*fx[0] +fdims*nex[1]+nex[2];
-			temp2[k][7]=dims2*nex[0]+fdims*nex[1]+nex[2];
-		}
-		/*The store operation may only be done by one thread at a time, 
-		*to ensure synchronisation.*/
-		#pragma omp critical
-		{
-		for(int k=0; k<il; k++){
-			out[temp2[k][0]]+=temp[k][0];
-			out[temp2[k][1]]+=temp[k][1];
-			out[temp2[k][2]]+=temp[k][2];
-			out[temp2[k][3]]+=temp[k][3];
-			out[temp2[k][4]]+=temp[k][4];
-			out[temp2[k][5]]+=temp[k][5];
-			out[temp2[k][6]]+=temp[k][6];
-			out[temp2[k][7]]+=temp[k][7];
-		}
-		}
-	}
-	return 0;
+                    fx[i]+=dims;
+            }
+            temp[k][0]=invrho*tx[0]*tx[1]*tx[2];
+            temp[k][1]=invrho*dx[0]*tx[1]*tx[2];
+            temp[k][2]=invrho*tx[0]*dx[1]*tx[2];
+            temp[k][3]=invrho*dx[0]*dx[1]*tx[2];
+            temp[k][4]=invrho*tx[0]*tx[1]*dx[2];
+            temp[k][5]=invrho*dx[0]*tx[1]*dx[2];
+            temp[k][6]=invrho*tx[0]*dx[1]*dx[2];
+            temp[k][7]=invrho*dx[0]*dx[1]*dx[2];
+            temp2[k][0]=dims2*fx[0] +fdims*fx[1] + fx[2];
+            temp2[k][1]=dims2*nex[0]+fdims*fx[1] + fx[2];
+            temp2[k][2]=dims2*fx[0] +fdims*nex[1]+ fx[2];
+            temp2[k][3]=dims2*nex[0]+fdims*nex[1]+ fx[2];
+            temp2[k][4]=dims2*fx[0] +fdims*fx[1] +nex[2];
+            temp2[k][5]=dims2*nex[0]+fdims*fx[1] +nex[2];
+            temp2[k][6]=dims2*fx[0] +fdims*nex[1]+nex[2];
+            temp2[k][7]=dims2*nex[0]+fdims*nex[1]+nex[2];
+        }
+        /*The store operation may only be done by one thread at a time,
+        *to ensure synchronisation.*/
+        #pragma omp critical
+        {
+          for(int k=0; k<il; k++)
+          {
+            out[temp2[k][0]]+=temp[k][0];
+            out[temp2[k][1]]+=temp[k][1];
+            out[temp2[k][2]]+=temp[k][2];
+            out[temp2[k][3]]+=temp[k][3];
+            out[temp2[k][4]]+=temp[k][4];
+            out[temp2[k][5]]+=temp[k][5];
+            out[temp2[k][6]]+=temp[k][6];
+            out[temp2[k][7]]+=temp[k][7];
+          }
+        }
+    }
+    return 0;
 }
 
 //Helper function for 1D window function.
@@ -118,12 +121,13 @@ inline float onedinvwindow(int kx, int n)
 }
 
 //The window function of the CiC procedure above. Need to deconvolve this for the power spectrum.
+//Note that if the grid size is ~2 times the number of particles, as by default, the effect of this is negligible.
 float invwindow(int kx, int ky, int kz, int n)
 {
-        if(n == 0)
-                return 0;
-        float iwx = onedinvwindow(kx, n);
-        float iwy = onedinvwindow(ky, n);
-        float iwz = onedinvwindow(kz, n);
-	return pow(iwx*iwy*iwz,2);
+    if(n == 0)
+        return 0;
+    float iwx = onedinvwindow(kx, n);
+    float iwy = onedinvwindow(ky, n);
+    float iwz = onedinvwindow(kz, n);
+    return pow(iwx*iwy*iwz,2);
 }
