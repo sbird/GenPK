@@ -36,7 +36,6 @@ PRO=#-pg
 #gcc
 PPFLAGS:=$(CFLAGS)
 CXXFLAGS+= $(PPFLAGS)
-CFLAGS+= -std=c99
 objs = powerspectrum.o fieldize.o read_fieldize.o utils.o
 .PHONY:all love clean test dist
 
