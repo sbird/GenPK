@@ -70,7 +70,7 @@ using namespace std;
  * to a file, and then frees the memory*/
 int main(int argc, char* argv[])
 {
-  int nrbins,field_dims=0,type;
+  int field_dims=0,type;
   float *field, *power, *keffs;
   int *count;
   int64_t npart_total[N_TYPE];
@@ -146,10 +146,10 @@ int main(int argc, char* argv[])
     int tmp=2*nexttwo(cbrt(npart_total[type]));
     field_dims=std::max(field_dims, std::min(tmp, FIELD_DIMS));
   }
-  nrbins=floor(sqrt(3)*((field_dims+1.0)/2.0)+1);
+  const int nrbins=floor(sqrt(3)*((field_dims+1.0)/2.0)+1);
   //Memory for the field
   printf("FFT grid dimension: %u\n",field_dims);
-  size_t field_size = 2*field_dims*field_dims*(field_dims/2+1);
+  const size_t field_size = 2*field_dims*field_dims*(field_dims/2+1);
   /* Allocating a bit more memory allows us to do in-place transforms.*/
   if(!(field=(float *)fftwf_malloc(field_size*sizeof(float)))){
   	fprintf(stderr,"Error allocating memory for field\n");
