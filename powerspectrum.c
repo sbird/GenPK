@@ -37,29 +37,14 @@ int powerspectrum(int dims, fftwf_complex *outfield, fftwf_complex *outfield2, i
 	const int dims3=dims2*dims;
 	/*How many bins per unit interval in k?*/
 	const int binsperunit=nrbins/(floor(sqrt(3)*abs((dims+1.0)/2.0)+1));
-	/*Half the bin width*/
-	const float bwth=1.0/(2.0*binsperunit);
 	/* Now we compute the powerspectrum in each direction.
 	 * FFTW is unnormalised, so we need to scale by the length of the array
 	 * (we do this later). */
-	for(int i=0; i< nrbins/2; i++){
-		/* bin center (k) is i+a.
-		 * a is bin width/2, is 0.5
-		 * k_eff is k+ 2a^2k/(a^2+3k^2) */
-		float k=i*2.0*bwth;
-		keffs[i]=(k+bwth)+2*pow(bwth,2)*(k+bwth)/(pow(bwth,2)+3*pow((k+bwth),2));
-		power[i]=0;
-		count[i]=0;
-	}
-	/*After this point, the number of modes is decreasing.*/
-	for(int i=nrbins/2; i< nrbins; i++){
-		/* bin center (k) is i+a.
-		 * a is bin width/2, is 0.5
-		 * k_eff is k+ 2a^2k/(a^2+3k^2) */
-		float k=i*2.0*bwth;
-		keffs[i]=(k+bwth)-2*pow(bwth,2)*(k+bwth)/(pow(bwth,2)+3*pow((k+bwth),2));
-		power[i]=0;
-		count[i]=0;
+        memset(power, 0, nrbins*sizeof(double));
+        memset(count, 0, nrbins*sizeof(int));
+	for(int i=0; i< nrbins; i++){
+		/* bin center (k) is i+0.5.*/
+		keffs[i]=(i+0.5)/binsperunit;
 	}
 	#pragma omp parallel 
 	{
