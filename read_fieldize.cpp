@@ -261,13 +261,14 @@ int load_hdf5_header(const char *ffname, double  *atime, double *redshift, doubl
   
 /* This routine loads particle data from a single HDF5 snapshot file.
  * A snapshot may be distributed into multiple files. */
-int read_fieldize_hdf5(float * field, const char *ffname, int type, double box, int field_dims, float * total_mass, int fileno)
+int read_fieldize_hdf5(float * field, const char *ffname, int type, double box, int field_dims, double * total_mass, int fileno)
 {
   int npart[N_TYPE];
   unsigned int npart_total[N_TYPE];
   double mass[N_TYPE];
   FLOAT_TYPE *pos=NULL;
   FLOAT_TYPE *masses=NULL;
+  double total_mass_this_file=0;
   char name[16];
   double Omega0;
   hid_t hdf_group,hdf_file;
@@ -311,19 +312,18 @@ int read_fieldize_hdf5(float * field, const char *ffname, int type, double box, 
           fprintf(stderr,"Error allocating particle memory of %ld MB for type %d\n",npart[type]*sizeof(FLOAT_TYPE)/1024/1024,type);
           return -1;
   }
-  if(mass[type] == 0){
+   if(mass[type] == 0){
         if (length != get_single_dataset("Masses",masses,length,&hdf_group,fileno))
              goto exit;
-        for(int i = 0; i<npart[type]; i++)
-            *total_mass += masses[i];
   }
   else {
-        for(int i = 0; i<npart[type]; i++){
+        for(int i = 0; i<npart[type]; i++)
             masses[i] = mass[type];
-            *total_mass += masses[i];
-        }
   }
-
+  for(int i = 0; i<npart[type]; i++)
+    total_mass_this_file += masses[i];
+  //Do the final summation here to avoid fp roundoff
+  *total_mass += total_mass_this_file;
   fieldize(box,field_dims,field,npart_total[type],npart[type],pos, masses, 1);
 exit:
   H5Gclose(hdf_group);

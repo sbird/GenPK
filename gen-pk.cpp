@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
               continue;
           memset(field, 0, field_size*sizeof(float));
           if (use_hdf5){
-              float total_mass = 0;
+              double total_mass = 0;
               for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
                   read_fieldize_hdf5(field, fnames[fileno].c_str(), type, box, field_dims, &total_mass, fileno);
               //Correct for mass
@@ -236,7 +236,7 @@ int main(int argc, char* argv[])
           fprintf(stderr,"Reading...\n");
           //Get the new filename if HDF5
           if (use_hdf52){
-              float total_mass = 0;
+              double total_mass = 0;
               for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
                   read_fieldize_hdf5(field, fnames[fileno].c_str(), 1, box, field_dims, &total_mass, fileno);
           }
@@ -244,7 +244,7 @@ int main(int argc, char* argv[])
             continue;
           //Get the new filename if HDF5
           if (use_hdf52){
-              float total_mass = 0;
+              double total_mass = 0;
               for(unsigned fileno = 0; fileno < fnames2.size(); ++fileno)
                   read_fieldize_hdf5(field2, fnames2[fileno].c_str(), 1, box, field_dims, &total_mass, fileno);
           }
@@ -279,7 +279,7 @@ int main(int argc, char* argv[])
        fftwf_plan pl2=fftwf_plan_dft_r2c_3d(field_dims,field_dims,field_dims,&field2[0],outfield2, FFTW_ESTIMATE);
        //Get the DM
        if (use_hdf5){
-           float total_mass = 0;
+           double total_mass = 0;
            for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
                read_fieldize_hdf5(field, fnames[fileno].c_str(), 1, box, field_dims, &total_mass, fileno);
            if (total_mass > 0){
@@ -291,7 +291,7 @@ int main(int argc, char* argv[])
            read_fieldize(field,snap,1, box, field_dims);
        //Get the other species
        if (use_hdf5){
-           float total_mass = 0;
+           double total_mass = 0;
            for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
                read_fieldize_hdf5(field2, fnames[fileno].c_str(), crosstype, box, field_dims, &total_mass, fileno);
               //Correct for mass

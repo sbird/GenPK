@@ -65,8 +65,8 @@ int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box
  * @param box Boxsize, in kpc
  * @param field_dims Length of side of the field above.
  * @param fileno number of file to use.
- * @param total_mass Total mass of particles */
-int read_fieldize_hdf5(float * field, const char *ffname, int type, double box, int field_dims, float * total_mass,int fileno);
+ * @param total_mass Variable to store total mass of particles */
+int read_fieldize_hdf5(float * field, const char *ffname, int type, double box, int field_dims, double * total_mass,int fileno);
 
 /* this routine loads header data from the first file of an HDF5 snapshot.*/
 int load_hdf5_header(const char *ffname, double  *atime, double *redshift, double *box100, double *h100, int64_t *npart_all, double * mass);
