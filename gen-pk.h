@@ -38,7 +38,7 @@ int nexttwo(int);
  * modes at higher k
  * @param power Power spectrum
  * @param count Number of modes in each bin*/
-int print_pk(std::string filename, int nrbins, float * keffs, float * power, int* count);
+int print_pk(std::string filename, int nrbins, double * keffs, double * power, int* count);
 
 /** Prints usage info */
 void help(void);
@@ -113,7 +113,7 @@ float invwindow(int kx, int ky, int kz, int n);
  * @param power Pointer to memory to output powerspectrum to. Needs to store nrbins values.
  * @param count Ditto for modes per bin
  * @param keffs Ditto for effective k.*/
-int powerspectrum(int dims, fftwf_complex* outfield, fftwf_complex* outfield2, int nrbins, float *power, int *count, float *keffs);
+int powerspectrum(int dims, fftwf_complex* outfield, fftwf_complex* outfield2, int nrbins, double *power, int *count, double *keffs);
 
 #ifdef __cplusplus
 }

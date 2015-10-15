@@ -71,7 +71,8 @@ using namespace std;
 int main(int argc, char* argv[])
 {
   int field_dims=0,type;
-  float *field, *power, *keffs;
+  float *field;
+  double *power, *keffs;
   int *count;
   int64_t npart_total[N_TYPE];
   double mass[N_TYPE];
@@ -166,9 +167,9 @@ int main(int argc, char* argv[])
   fftwf_plan_with_nthreads(omp_get_num_procs());
   pl=fftwf_plan_dft_r2c_3d(field_dims,field_dims,field_dims,&field[0],outfield, FFTW_ESTIMATE);
   //Allocate memory for output
-  power=(float *) malloc(nrbins*sizeof(float));
+  power=(double *) malloc(nrbins*sizeof(double));
   count=(int *) malloc(nrbins*sizeof(int));
-  keffs=(float *) malloc(nrbins*sizeof(float));
+  keffs=(double *) malloc(nrbins*sizeof(double));
   if(!power || !count || !keffs){
   	fprintf(stderr,"Error allocating memory for power spectrum.\n");
         return 1;

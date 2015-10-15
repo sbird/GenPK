@@ -15,6 +15,7 @@
 #include <fftw3.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 /** \file 
  * Defines powerspectrum() wrapper around FFTW*/
@@ -30,7 +31,7 @@ extern float invwindow(int kx, int ky, int kz, int n);
 /**Little macro to work the storage order of the FFT.*/
 #define KVAL(n) ((n)<=dims/2 ? (n) : ((n)-dims))
 
-int powerspectrum(int dims, fftwf_complex *outfield, fftwf_complex *outfield2, int nrbins, float *power, int *count,float *keffs)
+int powerspectrum(int dims, fftwf_complex *outfield, fftwf_complex *outfield2, int nrbins, double *power, int *count,double *keffs)
 {
 	const int dims2=dims*dims;
 	const int dims3=dims2*dims;
@@ -62,15 +63,14 @@ int powerspectrum(int dims, fftwf_complex *outfield, fftwf_complex *outfield2, i
 	}
 	#pragma omp parallel 
 	{
-		float powerpriv[nrbins];
+		double powerpriv[nrbins];
 		int countpriv[nrbins];
-		for(int i=0; i< nrbins; i++){
-			powerpriv[i]=0;
-			countpriv[i]=0;
-		}
+                memset(powerpriv, 0, nrbins*sizeof(double));
+                memset(countpriv, 0, nrbins*sizeof(int));
+
 		/* Want P(k)= F(k).re*F(k).re+F(k).im*F(k).im
 		 * Use the symmetry of the real fourier transform to half the final dimension.*/
-		#pragma omp for schedule(static, 128) nowait
+		#pragma omp for nowait
 		for(int i=0; i<dims;i++){
 			int indx=i*dims*(dims/2+1);
 			for(int j=0; j<dims; j++){
@@ -79,7 +79,7 @@ int powerspectrum(int dims, fftwf_complex *outfield, fftwf_complex *outfield2, i
 				 * as they alone are not doubled.*/
 				/*Do k=0 mode.*/
 				int index=indx+indy;
-				float kk=sqrt(pow(KVAL(i),2)+pow(KVAL(j),2));
+				double kk=sqrt(pow(KVAL(i),2)+pow(KVAL(j),2));
 				int psindex=floor(binsperunit*kk);
 				powerpriv[psindex]+=(outfield[index][0]*outfield2[index][0]+outfield[index][1]*outfield2[index][1])*pow(invwindow(KVAL(i),KVAL(j),0,dims),2);
 				countpriv[psindex]++;
@@ -101,6 +101,7 @@ int powerspectrum(int dims, fftwf_complex *outfield, fftwf_complex *outfield2, i
 				}
 			}
 		}
+		//Can't do reductions on arrays yet.
 		#pragma omp critical
 		{
 			for(int i=0; i< nrbins;i++){

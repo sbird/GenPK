@@ -4,7 +4,7 @@
 
 /** \file
  * Defines a few small utility functions*/
-int print_pk(std::string filename, int nrbins, float * keffs, float * power, int * count)
+int print_pk(std::string filename, int nrbins, double * keffs, double * power, int * count)
 {
   FILE *fd;
   if(!(fd=fopen(filename.c_str(), "w"))){
