@@ -110,23 +110,20 @@ int fieldize(double boxsize, int dims, float *out, int64_t segment_particles, FL
 	return 0;
 }
 
+//Helper function for 1D window function.
+inline float onedinvwindow(int kx, int n)
+{
+    //Return \pi x /(n sin(\pi x n)) unless x = 0, in which case return 1.
+    return kx ? M_PI*kx/(n*sin(M_PI*kx/(float)n)) : 1.0;
+}
+
 //The window function of the CiC procedure above. Need to deconvolve this for the power spectrum.
 float invwindow(int kx, int ky, int kz, int n)
 {
-	float iwx,iwy,iwz;
-        if(!n)
+        if(n == 0)
                 return 0;
-	if(!kx)
-		iwx=1.0;
-	else
-		iwx=M_PI*kx/(n*sin(M_PI*kx/(float)n));
-	if(!ky)
-		iwy=1.0;
-	else
-		iwy=M_PI*ky/(n*sin(M_PI*ky/(float)n));
-	if(!kz)
-		iwz=1.0;
-	else
-		iwz=M_PI*kz/(n*sin(M_PI*kz/(float)n));
+        float iwx = onedinvwindow(kx, n);
+        float iwy = onedinvwindow(ky, n);
+        float iwz = onedinvwindow(kz, n);
 	return pow(iwx*iwy*iwz,2);
 }
