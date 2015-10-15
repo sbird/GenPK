@@ -136,10 +136,10 @@ int main(int argc, char* argv[])
       }
       //Get the header and print out some useful things
     box=snap->GetHeader().BoxSize;
-    fprintf(stderr, "Boxsize=%g, ",box);
-    fprintf(stderr, "NPart=(%g,%g,%g,%g,%g,%g)**3\n",cbrt(npart_total[0]),cbrt(npart_total[1]),cbrt(npart_total[2]),cbrt(npart_total[3]),cbrt(npart_total[4]),cbrt(npart_total[5]));
-    fprintf(stderr, "Masses=[%g %g %g ]\n",snap->GetHeader().mass[0],snap->GetHeader().mass[1],snap->GetHeader().mass[2]);
-    fprintf(stderr, "redshift=%g, Ω_M=%g\n",snap->GetHeader().redshift,snap->GetHeader().Omega0);
+    printf("Boxsize=%g, ",box);
+    printf("NPart=(%g,%g,%g,%g,%g,%g)**3\n",cbrt(npart_total[0]),cbrt(npart_total[1]),cbrt(npart_total[2]),cbrt(npart_total[3]),cbrt(npart_total[4]),cbrt(npart_total[5]));
+    printf("Masses=[%g %g %g ]\n",snap->GetHeader().mass[0],snap->GetHeader().mass[1],snap->GetHeader().mass[2]);
+    printf("redshift=%g, Ω_M=%g\n",snap->GetHeader().redshift,snap->GetHeader().Omega0);
   }
   //Work out how large a field we need
   for(type=0;type<N_TYPE;type++){
@@ -148,6 +148,7 @@ int main(int argc, char* argv[])
   }
   nrbins=floor(sqrt(3)*((field_dims+1.0)/2.0)+1);
   //Memory for the field
+  printf("FFT grid dimension: %u\n",field_dims);
   size_t field_size = 2*field_dims*field_dims*(field_dims/2+1);
   /* Allocating a bit more memory allows us to do in-place transforms.*/
   if(!(field=(float *)fftwf_malloc(field_size*sizeof(float)))){
