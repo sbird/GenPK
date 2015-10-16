@@ -18,6 +18,7 @@
 #include <cmath>
 #include <stdint.h>
 #include "gen-pk.h"
+#include <cassert>
 
 /** Number of particles to keep in the thread-local buffer*/
 #define IL 64
@@ -44,18 +45,20 @@
  */
 int fieldize(double boxsize, int dims, float *out, int64_t segment_particles, FLOAT_TYPE *positions, FLOAT_TYPE * masses, double mass, int extra)
 {
-    const int fdims=2*(dims/2+extra);
+    const size_t fdims=2*(dims/2+extra);
     /*If extra is on, we want to leave space for FFTW
      * to put the extra bits, so skip a couple of places.*/
-    const int dims2=fdims*dims;
+    const size_t dims2=fdims*dims;
     const float units=dims/boxsize;
     #pragma omp parallel for
-    for(int index=0;index<segment_particles;index+=IL) {
-        float dx[3],tx[3], x[3], temp[IL][8];
-        int fx[3],nex[3],temp2[IL][8];
-                const int il=(index+IL<segment_particles ? IL : segment_particles-index);
+    for(int64_t index=0;index<segment_particles;index+=IL) {
+        float temp[IL][8];
+        size_t temp2[IL][8];
+        const int il=(index+IL<segment_particles ? IL : segment_particles-index);
         for(int k=0; k<il; k++)
         {
+            float dx[3],tx[3], x[3];
+            int fx[3],nex[3];
             /* This is one over density.*/
             const float invrho = (masses ? masses[index+k] : mass);
             for(int i=0; i<3; i++)
@@ -87,6 +90,8 @@ int fieldize(double boxsize, int dims, float *out, int64_t segment_particles, FL
             temp2[k][5]=dims2*nex[0]+fdims*fx[1] +nex[2];
             temp2[k][6]=dims2*fx[0] +fdims*nex[1]+nex[2];
             temp2[k][7]=dims2*nex[0]+fdims*nex[1]+nex[2];
+            for(int c=0; c<8; c++)
+                assert(temp2[k][c] >= 0 && temp2[k][c] < dims2*dims);
         }
         /*The store operation may only be done by one thread at a time,
         *to ensure synchronisation.*/
