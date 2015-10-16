@@ -181,18 +181,16 @@ int main(int argc, char* argv[])
           if(npart_total[type] == 0)
               continue;
           memset(field, 0, field_size*sizeof(float));
+          double total_mass = 0;
           if (use_hdf5){
-              double total_mass = 0;
               for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
                   read_fieldize_hdf5(field, fnames[fileno].c_str(), type, box, field_dims, &total_mass, fileno);
-              printf("total_mass in type %d = %g\n", type, total_mass);
           }
-          else{
-              if(read_fieldize(field,snap,type, box, field_dims))
+          else if(read_fieldize(field,snap,type, box, field_dims, &total_mass))
                   continue;
-          }
-	      fftwf_execute(pl);
-          if(powerspectrum(field_dims,outfield, outfield, nrbins, power,count,keffs))
+          printf("total_mass in type %d = %g\n", type, total_mass);
+          fftwf_execute(pl);
+          if(powerspectrum(field_dims,outfield, outfield, nrbins, power,count,keffs, total_mass, total_mass))
                   continue;
           filename=outdir;
           filename+="/PK-"+type_str(type)+"-"+infiles.substr(last+1);
@@ -232,24 +230,24 @@ int main(int argc, char* argv[])
 
           fprintf(stderr,"Reading...\n");
           //Get the new filename if HDF5
+          double total_mass = 0;
           if (use_hdf52){
-              double total_mass = 0;
               for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
                   read_fieldize_hdf5(field, fnames[fileno].c_str(), 1, box, field_dims, &total_mass, fileno);
           }
-          else if(read_fieldize(field,snap,type, box, field_dims))
+          else if(read_fieldize(field,snap,type, box, field_dims, &total_mass))
             continue;
+          double total_mass2 = 0;
           //Get the new filename if HDF5
           if (use_hdf52){
-              double total_mass = 0;
               for(unsigned fileno = 0; fileno < fnames2.size(); ++fileno)
-                  read_fieldize_hdf5(field2, fnames2[fileno].c_str(), 1, box, field_dims, &total_mass, fileno);
+                  read_fieldize_hdf5(field2, fnames2[fileno].c_str(), 1, box, field_dims, &total_mass2, fileno);
           }
-          else if(read_fieldize(field2,snap2,type, box, field_dims))
+          else if(read_fieldize(field2,snap2,type, box, field_dims, &total_mass2))
             continue;
           fftwf_execute(pl);
           fftwf_execute(pl2);
-          if(powerspectrum(field_dims,outfield, outfield2, nrbins, power,count,keffs))
+          if(powerspectrum(field_dims,outfield, outfield2, nrbins, power,count,keffs, total_mass, total_mass2))
                   continue;
           filename=outdir;
           filename+="/PX-"+type_str(type)+"-"+infiles.substr(last+1);
@@ -275,26 +273,26 @@ int main(int argc, char* argv[])
        fftwf_complex * outfield2=(fftwf_complex *) &field2[0];
        fftwf_plan pl2=fftwf_plan_dft_r2c_3d(field_dims,field_dims,field_dims,&field2[0],outfield2, FFTW_ESTIMATE);
        //Get the DM
+       double total_mass = 0;
        if (use_hdf5){
-           double total_mass = 0;
            for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
                read_fieldize_hdf5(field, fnames[fileno].c_str(), 1, box, field_dims, &total_mass, fileno);
        }
        else 
-           read_fieldize(field,snap,1, box, field_dims);
+           read_fieldize(field,snap,1, box, field_dims, &total_mass);
        //Get the other species
+       double total_mass2 = 0;
        if (use_hdf5){
-           double total_mass = 0;
            for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
-               read_fieldize_hdf5(field2, fnames[fileno].c_str(), crosstype, box, field_dims, &total_mass, fileno);
+               read_fieldize_hdf5(field2, fnames[fileno].c_str(), crosstype, box, field_dims, &total_mass2, fileno);
        }
        else 
-           read_fieldize(field2,snap,crosstype, box, field_dims);
+           read_fieldize(field2,snap,crosstype, box, field_dims, &total_mass2);
        //Do FFT of DM
 	   fftwf_execute(pl);
        //Do FFT of other species
 	   fftwf_execute(pl2);
-       powerspectrum(field_dims,outfield, outfield2, nrbins, power,count,keffs);
+       powerspectrum(field_dims,outfield, outfield2, nrbins, power,count,keffs, total_mass, total_mass2);
        filename=outdir;
        filename+="/PK-DMx"+type_str(crosstype)+"-"+infiles.substr(last+1);
        //Multiply by a mass factor

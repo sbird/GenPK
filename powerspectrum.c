@@ -32,7 +32,7 @@ extern float invwindow(int kx, int ky, int kz, int n);
 /**Little macro to work the storage order of the FFT.*/
 #define KVAL(n) ((n)<=dims/2 ? (n) : ((n)-dims))
 
-int powerspectrum(int dims, fftwf_complex *outfield, fftwf_complex *outfield2, int nrbins, double *power, int *count,double *keffs)
+int powerspectrum(int dims, fftwf_complex *outfield, fftwf_complex *outfield2, int nrbins, double *power, int *count,double *keffs, double total_mass, double total_mass2)
 {
 	/*How many bins per unit (log) interval in k?*/
 	const int binsperunit=nrbins/ceil(log(abs((dims+1.0)/2.0)+1));
@@ -105,13 +105,9 @@ int powerspectrum(int dims, fftwf_complex *outfield, fftwf_complex *outfield2, i
 			}
 		}
 	}
-	const size_t dims2=dims*dims;
-	const size_t dims3=dims2*dims;
 	for(int i=0; i< nrbins;i++){
 		if(count[i]){
-			/* I do the division twice to avoid any overflow.*/
-			power[i]/=dims3;
-			power[i]/=dims3;
+			power[i]/=total_mass*total_mass2;
 			power[i]/=count[i];
 		}
 	}

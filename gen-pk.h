@@ -55,7 +55,7 @@ std::string type_str(int type);
  * @param type Particle type to read; since POS always has all types, complications are minimal
  * @param box Boxsize, in kpc
  * @param field_dims Length of side of the field above. */
-int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box, int field_dims);
+int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box, int field_dims, double * total_mass);
 
 /** Wrapper function to read the data from an HDF5 snapshot and pass it to fieldize.
  * Returns 1 is some error occured allocating memory, and zero if successful.
@@ -113,7 +113,7 @@ float invwindow(int kx, int ky, int kz, int n);
  * @param power Pointer to memory to output powerspectrum to. Needs to store nrbins values.
  * @param count Ditto for modes per bin
  * @param keffs Ditto for effective k.*/
-int powerspectrum(int dims, fftwf_complex* outfield, fftwf_complex* outfield2, int nrbins, double *power, int *count, double *keffs);
+int powerspectrum(int dims, fftwf_complex* outfield, fftwf_complex* outfield2, int nrbins, double *power, int *count, double *keffs, double total_mass, double total_mass2);
 
 #ifdef __cplusplus
 }

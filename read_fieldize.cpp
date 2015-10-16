@@ -15,7 +15,7 @@
  * Defines read_fieldize() , wraps fieldize() and GadgetReader */
 
 /** read_fieldize: reads particles from a Gadget format particle catalogue and places them on a grid, using cloud-in-cell*/
-int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box, int field_dims)
+int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box, int field_dims, double * total_mass)
 {
         int64_t npart_total,toread;
         int parts=0;
@@ -93,6 +93,7 @@ int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box
                 }
                 fieldize(box,field_dims,field,npart_stars,pos,NULL, 1./npart_total, 1);
         }
+        *total_mass += 1;
         free(pos);
         return 0;
 }
