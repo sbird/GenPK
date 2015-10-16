@@ -16,6 +16,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 /** \file 
  * Defines powerspectrum() wrapper around FFTW*/
@@ -33,10 +34,8 @@ extern float invwindow(int kx, int ky, int kz, int n);
 
 int powerspectrum(int dims, fftwf_complex *outfield, fftwf_complex *outfield2, int nrbins, double *power, int *count,double *keffs)
 {
-	const int dims2=dims*dims;
-	const int dims3=dims2*dims;
-	/*How many bins per unit interval in k?*/
-	const int binsperunit=nrbins/(floor(sqrt(3)*abs((dims+1.0)/2.0)+1));
+	/*How many bins per unit (log) interval in k?*/
+	const int binsperunit=nrbins/ceil(log(abs((dims+1.0)/2.0)+1));
 	/* Now we compute the powerspectrum in each direction.
 	 * FFTW is unnormalised, so we need to scale by the length of the array
 	 * (we do this later). */
@@ -44,7 +43,7 @@ int powerspectrum(int dims, fftwf_complex *outfield, fftwf_complex *outfield2, i
         memset(count, 0, nrbins*sizeof(int));
 	for(int i=0; i< nrbins; i++){
 		/* bin center (k) is i+0.5.*/
-		keffs[i]=(i+0.5)/binsperunit;
+		keffs[i]=exp((i+0.5)/binsperunit);
 	}
 	#pragma omp parallel 
 	{
@@ -65,20 +64,31 @@ int powerspectrum(int dims, fftwf_complex *outfield, fftwf_complex *outfield2, i
 				/*Do k=0 mode.*/
 				int index=indx+indy;
 				double kk=sqrt(pow(KVAL(i),2)+pow(KVAL(j),2));
-				int psindex=floor(binsperunit*kk);
-				powerpriv[psindex]+=(outfield[index][0]*outfield2[index][0]+outfield[index][1]*outfield2[index][1])*pow(invwindow(KVAL(i),KVAL(j),0,dims),2);
-				countpriv[psindex]++;
+                                //We don't want the 0,0,0 mode as that is just the mean of the field.
+                                //Exclude modes above dims2 as our square box doesn't sample all of them, so it would unfairly weight the power spectrum.
+                                if (kk > 0 && kk < dims/2) {
+                                    int psindex=floor(binsperunit*log(kk));
+                                    assert(psindex < nrbins);
+                                    powerpriv[psindex]+=(outfield[index][0]*outfield2[index][0]+outfield[index][1]*outfield2[index][1])*pow(invwindow(KVAL(i),KVAL(j),0,dims),2);
+                                    countpriv[psindex]++;
+                                }
 				/*Now do the k=N/2 mode*/
 				index=indx+indy+dims/2;
 				kk=sqrt(pow(KVAL(i),2)+pow(KVAL(j),2)+pow(KVAL(dims/2),2));
-				psindex=floor(binsperunit*kk);
-				powerpriv[psindex]+=(outfield[index][0]*outfield2[index][0]+outfield[index][1]*outfield2[index][1])*pow(invwindow(KVAL(i),KVAL(j),KVAL(dims/2),dims),2);
-				countpriv[psindex]++;
+                                if (kk < dims/2) {
+                                    int psindex=floor(binsperunit*log(kk));
+                                    assert(psindex < nrbins);
+                                    powerpriv[psindex]+=(outfield[index][0]*outfield2[index][0]+outfield[index][1]*outfield2[index][1])*pow(invwindow(KVAL(i),KVAL(j),KVAL(dims/2),dims),2);
+                                    countpriv[psindex]++;
+                                }
 				/*Now do the rest. Because of the symmetry, each mode counts twice.*/
 				for(int k=1; k<dims/2; k++){
 					index=indx+indy+k;
 					kk=sqrt(pow(KVAL(i),2)+pow(KVAL(j),2)+pow(KVAL(k),2));
-					psindex=floor(binsperunit*kk);
+                                        if (kk > dims/2)
+                                            continue;
+					int psindex=floor(binsperunit*log(kk));
+                                        assert(psindex < nrbins);
 					/* Correct for shot noise and window function in IDL. 
 					 * See my notes for the reason why.*/
 					powerpriv[psindex]+=2*(outfield[index][0]*outfield2[index][0]+outfield[index][1]*outfield2[index][1])*pow(invwindow(KVAL(i),KVAL(j),KVAL(k),dims),2);
@@ -95,6 +105,8 @@ int powerspectrum(int dims, fftwf_complex *outfield, fftwf_complex *outfield2, i
 			}
 		}
 	}
+	const size_t dims2=dims*dims;
+	const size_t dims3=dims2*dims;
 	for(int i=0; i< nrbins;i++){
 		if(count[i]){
 			/* I do the division twice to avoid any overflow.*/
