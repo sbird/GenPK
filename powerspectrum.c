@@ -35,7 +35,7 @@ extern float invwindow(int kx, int ky, int kz, int n);
 int powerspectrum(int dims, fftwf_complex *outfield, fftwf_complex *outfield2, int nrbins, double *power, int *count,double *keffs, double total_mass, double total_mass2)
 {
 	/*How many bins per unit (log) interval in k?*/
-	const int binsperunit=nrbins/ceil(log(abs((dims+1.0)/2.0)+1));
+	const int binsperunit=nrbins/ceil(log(dims/2.0));
 	/* Now we compute the powerspectrum in each direction.
 	 * FFTW is unnormalised, so we need to scale by the length of the array
 	 * (we do this later). */
