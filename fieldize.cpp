@@ -116,7 +116,7 @@ inline float onedinvwindow(int kx, int n)
 }
 
 //The window function of the CiC procedure above. Need to deconvolve this for the power spectrum.
-//Note that if the grid size is ~2 times the number of particles, as by default, the effect of this is negligible.
+//Only has an effect for k > Nyquist/4.
 float invwindow(int kx, int ky, int kz, int n)
 {
     if(n == 0)
