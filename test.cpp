@@ -37,15 +37,15 @@ BOOST_AUTO_TEST_CASE(check_fieldize)
                 pos[i]=i/3.;
         FLOAT_TYPE masses[30];
         for(int i=0; i<30; i++)
-                masses[i]=1/10.;
-        fieldize(10, dims,field,10,pos,masses,1./10, 1);
+                masses[i]=10.;
+        fieldize(10, dims,field,10,pos,masses,10., 1);
         //Check off-diagonal elements are zero
-        FLOATS_NEAR_TO(field[0],10.7638874);
+        FLOATS_NEAR_TO(field[0],8.61111);
         BOOST_CHECK_EQUAL(field[3],0);
         BOOST_CHECK_EQUAL(field[20],0);
         BOOST_CHECK_EQUAL(field[125],0);
         //Check on-diagonals
-        FLOATS_NEAR_TO(field[124],2.08333);
+        FLOATS_NEAR_TO(field[124],1.66666);
 
 }
 
@@ -59,36 +59,38 @@ BOOST_AUTO_TEST_CASE(check_invwindow)
 BOOST_AUTO_TEST_CASE(check_powerspectrum)
 {
        float field[2*4*4*(4/2+1)]={1};
-       float pow[4];
+       double pow[4];
        int count[4];
-       float keffs[4];
+       double keffs[4];
        fftwf_complex* outfield;
        outfield=(fftwf_complex *) &field[0];
        for(int i=0; i<32; i++)
                field[i]+=1;
        fftwf_plan pl=fftwf_plan_dft_r2c_3d(4,4,4,&field[0],outfield, FFTW_ESTIMATE);
+       double total_mass = 4*4*4;
        fftwf_execute(pl);
-       BOOST_REQUIRE_EQUAL(powerspectrum(4,outfield,outfield,4,pow,count,keffs),0);
-       FLOATS_NEAR_TO(keffs[2],2.43421054);
-       BOOST_CHECK_EQUAL(count[1],26);
-       BOOST_CHECK_EQUAL(count[0],1);
-       FLOATS_NEAR_TO(pow[0],0.129150391);
-       FLOATS_NEAR_TO(pow[1],0.0134053277);
-       FLOATS_NEAR_TO(pow[2],0.0139268516);
-       FLOATS_NEAR_TO(pow[3],0.035415493);
+       BOOST_REQUIRE_EQUAL(powerspectrum(4,outfield,outfield,4,pow,count,keffs, total_mass, total_mass),0);
+       FLOATS_NEAR_TO(keffs[2],1.86825);
+       BOOST_CHECK_EQUAL(count[1],12);
+       BOOST_CHECK_EQUAL(count[0],6);
+       FLOATS_NEAR_TO(pow[0],0.0444665);
+       FLOATS_NEAR_TO(pow[1],0.00509005);
+       FLOATS_NEAR_TO(pow[2],0.00258238);
+       FLOATS_NEAR_TO(pow[3],0);
        fftwf_destroy_plan(pl);
 }
 
 BOOST_AUTO_TEST_CASE(check_read_fieldize)
 {
         float field[2*4*4*(4/2+1)]={0};
+        double total_mass = 0;
         GSnap snap("test_g2_snap", false);
         BOOST_REQUIRE_MESSAGE(snap.GetNumFiles()==2,"Failed to find test snapshot data");
-        BOOST_REQUIRE_EQUAL(read_fieldize(field, &snap, BARYON_TYPE, 3000,4),0);
+        BOOST_REQUIRE_EQUAL(read_fieldize(field, &snap, BARYON_TYPE, 3000,4, &total_mass),0);
         FLOATS_NEAR_TO(field[10],0);
-        FLOATS_NEAR_TO(field[0],1.686963201);
-        FLOATS_NEAR_TO(field[15],0.7007349);
-        BOOST_REQUIRE_EQUAL(read_fieldize(field, &snap,BULGE_TYPE, 3000,4),1);
+        FLOATS_NEAR_TO(field[0],0.0263588);
+        FLOATS_NEAR_TO(field[15],0.010949);
+        BOOST_REQUIRE_EQUAL(read_fieldize(field, &snap,BULGE_TYPE, 3000,4, &total_mass),1);
 }
 
 BOOST_AUTO_TEST_CASE(check_type_str)
