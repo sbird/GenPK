@@ -28,7 +28,7 @@ ifeq (icc,$(findstring icc,${CC}))
   CFLAGS +=-O2 -g -c -w1 -openmp $(OPT) -I${GREAD}
   LINK +=${CXX} -openmp
 else
-  CFLAGS +=-O2 -g -c -Wall -fopenmp $(OPT) -I${GREAD}
+  CFLAGS +=-O2 -ffast-math -g -c -Wall -fopenmp $(OPT) -I${GREAD}
   LINK +=${CXX} -openmp $(PRO)
   LFLAGS += -lm -lgomp 
 endif
