@@ -35,7 +35,7 @@ extern double invwindow(int kx, int ky, int kz, int n);
 int powerspectrum(int dims, fftw_complex *outfield, fftw_complex *outfield2, int nrbins, double *power, int *count,double *keffs, double total_mass, double total_mass2)
 {
         /*How many bins per unit (log) interval in k?*/
-        const int binsperunit=nrbins/ceil(log(dims/2.0));
+        const int binsperunit=nrbins/ceil(log(sqrt(3)*dims/2.0));
         /* Now we compute the powerspectrum in each direction.
          * FFTW is unnormalised, so we need to scale by the length of the array
          * (we do this later). */
@@ -49,7 +49,6 @@ int powerspectrum(int dims, fftw_complex *outfield, fftw_complex *outfield2, int
                 memset(powerpriv, 0, nrbins*sizeof(double));
                 memset(keffspriv, 0, nrbins*sizeof(double));
                 memset(countpriv, 0, nrbins*sizeof(int));
-
                 /* Want P(k)= F(k).re*F(k).re+F(k).im*F(k).im
                  * Use the symmetry of the real fourier transform to half the final dimension.*/
                 #pragma omp for nowait
@@ -63,34 +62,27 @@ int powerspectrum(int dims, fftw_complex *outfield, fftw_complex *outfield2, int
                                 int index=indx+indy;
                                 double kk=sqrt(pow(KVAL(i),2)+pow(KVAL(j),2));
                                 //We don't want the 0,0,0 mode as that is just the mean of the field.
-                                //Exclude modes above dims2 as our square box doesn't sample all of them, so it would unfairly weight the power spectrum.
-                                if (kk > 0 && kk < dims/2) {
+                                if (kk > 0) {
                                     int psindex=floor(binsperunit*log(kk));
                                     assert(psindex < nrbins);
-                                    powerpriv[psindex]+=(outfield[index][0]*outfield2[index][0]+outfield[index][1]*outfield2[index][1])*pow(invwindow(KVAL(i),KVAL(j),0,dims),2);
+                                    powerpriv[psindex] += (outfield[index][0]*outfield2[index][0]+outfield[index][1]*outfield2[index][1])*pow(invwindow(KVAL(i),KVAL(j),0,dims),2);
                                     keffspriv[psindex]+=kk;
                                     countpriv[psindex]++;
                                 }
                                 /*Now do the k=N/2 mode*/
                                 index=indx+indy+dims/2;
                                 kk=sqrt(pow(KVAL(i),2)+pow(KVAL(j),2)+pow(KVAL(dims/2),2));
-                                if (kk < dims/2) {
-                                    int psindex=floor(binsperunit*log(kk));
-                                    assert(psindex < nrbins);
-                                    powerpriv[psindex]+=(outfield[index][0]*outfield2[index][0]+outfield[index][1]*outfield2[index][1])*pow(invwindow(KVAL(i),KVAL(j),KVAL(dims/2),dims),2);
-                                    keffspriv[psindex]+=kk;
-                                    countpriv[psindex]++;
-                                }
+                                int psindex=floor(binsperunit*log(kk));
+                                assert(psindex < nrbins);
+                                powerpriv[psindex] += (outfield[index][0]*outfield2[index][0]+outfield[index][1]*outfield2[index][1])*pow(invwindow(KVAL(i),KVAL(j),KVAL(dims/2),dims),2);
+                                keffspriv[psindex]+=kk;
+                                countpriv[psindex]++;
                                 /*Now do the rest. Because of the symmetry, each mode counts twice.*/
                                 for(int k=1; k<dims/2; k++){
                                         index=indx+indy+k;
                                         kk=sqrt(pow(KVAL(i),2)+pow(KVAL(j),2)+pow(KVAL(k),2));
-                                        if (kk > dims/2)
-                                            continue;
                                         int psindex=floor(binsperunit*log(kk));
                                         assert(psindex < nrbins);
-                                        /* Correct for shot noise and window function in IDL. 
-                                         * See my notes for the reason why.*/
                                         powerpriv[psindex]+=2*(outfield[index][0]*outfield2[index][0]+outfield[index][1]*outfield2[index][1])*pow(invwindow(KVAL(i),KVAL(j),KVAL(k),dims),2);
                                         countpriv[psindex]+=2;
                                         keffspriv[psindex]+=2*kk;
