@@ -20,7 +20,7 @@
 
 /** \file 
  * Defines powerspectrum() wrapper around FFTW*/
-extern float invwindow(int kx, int ky, int kz, int n);
+extern double invwindow(int kx, int ky, int kz, int n);
 
 /*Note we need some contiguous memory space after the actual data in field. *The real input data has size
  *dims*dims*dims
@@ -32,7 +32,7 @@ extern float invwindow(int kx, int ky, int kz, int n);
 /**Little macro to work the storage order of the FFT.*/
 #define KVAL(n) ((n)<=dims/2 ? (n) : ((n)-dims))
 
-int powerspectrum(int dims, fftwf_complex *outfield, fftwf_complex *outfield2, int nrbins, double *power, int *count,double *keffs, double total_mass, double total_mass2)
+int powerspectrum(int dims, fftw_complex *outfield, fftw_complex *outfield2, int nrbins, double *power, int *count,double *keffs, double total_mass, double total_mass2)
 {
         /*How many bins per unit (log) interval in k?*/
         const int binsperunit=nrbins/ceil(log(dims/2.0));

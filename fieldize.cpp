@@ -43,24 +43,24 @@
  * is about to be handed to an FFTW in-place routine, 
  * and skip the last 2 places of each row in the last dimension (of out)
  */
-int fieldize(double boxsize, int dims, float *out, int64_t segment_particles, FLOAT_TYPE *positions, FLOAT_TYPE * masses, double mass, int extra)
+int fieldize(double boxsize, int dims, GENFLOAT *out, int64_t segment_particles, FLOAT_TYPE *positions, FLOAT_TYPE * masses, double mass, int extra)
 {
     const size_t fdims=2*(dims/2+extra);
     /*If extra is on, we want to leave space for FFTW
      * to put the extra bits, so skip a couple of places.*/
     const size_t dims2=fdims*dims;
-    const float units=dims/boxsize;
+    const GENFLOAT units=dims/boxsize;
     #pragma omp parallel for
     for(int64_t index=0;index<segment_particles;index+=IL) {
-        float temp[IL][8];
+        GENFLOAT temp[IL][8];
         size_t temp2[IL][8];
         const int il=(index+IL<segment_particles ? IL : segment_particles-index);
         for(int k=0; k<il; k++)
         {
-            float dx[3],tx[3], x[3];
+            GENFLOAT dx[3],tx[3], x[3];
             int fx[3],nex[3];
             /* This is one over density.*/
-            const float invrho = (masses ? masses[index+k] : mass);
+            const GENFLOAT invrho = (masses ? masses[index+k] : mass);
             for(int i=0; i<3; i++)
             {
                 x[i]=positions[3*(index+k)+i]*units;
@@ -114,7 +114,7 @@ int fieldize(double boxsize, int dims, float *out, int64_t segment_particles, FL
 }
 
 //Helper function for 1D window function.
-inline float onedinvwindow(int kx, int n)
+inline GENFLOAT onedinvwindow(int kx, int n)
 {
     //Return \pi x /(n sin(\pi x n)) unless x = 0, in which case return 1.
     return kx ? M_PI*kx/(n*sin(M_PI*kx/(float)n)) : 1.0;
@@ -122,7 +122,7 @@ inline float onedinvwindow(int kx, int n)
 
 //The window function of the CiC procedure above. Need to deconvolve this for the power spectrum.
 //Only has an effect for k > Nyquist/4.
-float invwindow(int kx, int ky, int kz, int n)
+GENFLOAT invwindow(int kx, int ky, int kz, int n)
 {
     if(n == 0)
         return 0;

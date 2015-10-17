@@ -15,7 +15,7 @@
  * Defines read_fieldize() , wraps fieldize() and GadgetReader */
 
 /** read_fieldize: reads particles from a Gadget format particle catalogue and places them on a grid, using cloud-in-cell*/
-int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box, int field_dims, double * total_mass)
+int read_fieldize(GENFLOAT * field, GadgetReader::GSnap* snap, int type, double box, int field_dims, double * total_mass)
 {
         int64_t npart_total,toread;
         int parts=0;
@@ -262,7 +262,7 @@ int load_hdf5_header(const char *ffname, double  *atime, double *redshift, doubl
   
 /* This routine loads particle data from a single HDF5 snapshot file.
  * A snapshot may be distributed into multiple files. */
-int read_fieldize_hdf5(float * field, const char *ffname, int type, double box, int field_dims, double * total_mass, int fileno)
+int read_fieldize_hdf5(GENFLOAT * field, const char *ffname, int type, double box, int field_dims, double * total_mass, int fileno)
 {
   int npart[N_TYPE];
   double mass[N_TYPE];

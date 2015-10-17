@@ -71,7 +71,7 @@ using namespace std;
 int main(int argc, char* argv[])
 {
   int field_dims=0,type;
-  float *field;
+  GENFLOAT *field;
   double *power, *keffs;
   int *count;
   int64_t npart_total[N_TYPE];
@@ -82,8 +82,8 @@ int main(int argc, char* argv[])
   double box;
   GSnap * snap = NULL;
   bool use_hdf5 = false;
-  fftwf_plan pl;
-  fftwf_complex *outfield;
+  fftw_plan pl;
+  fftw_complex *outfield;
   while((c = getopt(argc, argv, "i:j:o:c:h")) !=-1){
     switch(c){
         case 'o':
@@ -152,20 +152,20 @@ int main(int argc, char* argv[])
   printf("FFT grid dimension: %u\n",field_dims);
   const size_t field_size = 2*field_dims*field_dims*(field_dims/2+1);
   /* Allocating a bit more memory allows us to do in-place transforms.*/
-  if(!(field=(float *)fftwf_malloc(field_size*sizeof(float)))){
+  if(!(field=(GENFLOAT *)fftw_malloc(field_size*sizeof(GENFLOAT)))){
   	fprintf(stderr,"Error allocating memory for field\n");
   	return 1;
   }
   string filename=outdir;
   size_t last=infiles.find_last_of("/\\");
   //Set up FFTW
-  outfield=(fftwf_complex *) &field[0];
-  if(!fftwf_init_threads()){
+  outfield=(fftw_complex *) &field[0];
+  if(!fftw_init_threads()){
   		  fprintf(stderr,"Error initialising fftw threads\n");
   		  return 0;
   }
-  fftwf_plan_with_nthreads(omp_get_num_procs());
-  pl=fftwf_plan_dft_r2c_3d(field_dims,field_dims,field_dims,&field[0],outfield, FFTW_ESTIMATE);
+  fftw_plan_with_nthreads(omp_get_num_procs());
+  pl=fftw_plan_dft_r2c_3d(field_dims,field_dims,field_dims,&field[0],outfield, FFTW_ESTIMATE);
   //Allocate memory for output
   power=(double *) malloc(nrbins*sizeof(double));
   count=(int *) malloc(nrbins*sizeof(int));
@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
           //Zero field
           if(npart_total[type] == 0)
               continue;
-          memset(field, 0, field_size*sizeof(float));
+          memset(field, 0, field_size*sizeof(GENFLOAT));
           double total_mass = 0;
           if (use_hdf5){
               for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
           else if(read_fieldize(field,snap,type, box, field_dims, &total_mass))
                   continue;
           printf("total_mass in type %d = %g\n", type, total_mass);
-          fftwf_execute(pl);
+          fftw_execute(pl);
           if(powerspectrum(field_dims,outfield, outfield, nrbins, power,count,keffs, total_mass, total_mass))
                   continue;
           filename=outdir;
@@ -218,15 +218,15 @@ int main(int argc, char* argv[])
               continue;
           //Memory for the field
           /* Allocating a bit more memory allows us to do in-place transforms.*/
-          float * field2;
-          if(!(field2=(float *)fftwf_malloc(field_size*sizeof(float)))){
+          GENFLOAT * field2;
+          if(!(field2=(GENFLOAT *)fftw_malloc(field_size*sizeof(GENFLOAT)))){
             fprintf(stderr,"Error allocating memory for second field\n");
             return 1;
           }
-          memset(field, 0, field_size*sizeof(float));
-          memset(field2, 0, field_size*sizeof(float));
-          fftwf_complex * outfield2=(fftwf_complex *) &field2[0];
-          fftwf_plan pl2=fftwf_plan_dft_r2c_3d(field_dims,field_dims,field_dims,&field2[0],outfield2, FFTW_ESTIMATE);
+          memset(field, 0, field_size*sizeof(GENFLOAT));
+          memset(field2, 0, field_size*sizeof(GENFLOAT));
+          fftw_complex * outfield2=(fftw_complex *) &field2[0];
+          fftw_plan pl2=fftw_plan_dft_r2c_3d(field_dims,field_dims,field_dims,&field2[0],outfield2, FFTW_ESTIMATE);
 
           fprintf(stderr,"Reading...\n");
           //Get the new filename if HDF5
@@ -245,8 +245,8 @@ int main(int argc, char* argv[])
           }
           else if(read_fieldize(field2,snap2,type, box, field_dims, &total_mass2))
             continue;
-          fftwf_execute(pl);
-          fftwf_execute(pl2);
+          fftw_execute(pl);
+          fftw_execute(pl2);
           if(powerspectrum(field_dims,outfield, outfield2, nrbins, power,count,keffs, total_mass, total_mass2))
                   continue;
           filename=outdir;
@@ -263,15 +263,15 @@ int main(int argc, char* argv[])
         }
        //Memory for the field
        /* Allocating a bit more memory allows us to do in-place transforms.*/
-       float * field2;
-       if(!(field2=(float *)fftwf_malloc(field_size*sizeof(float)))){
+       GENFLOAT * field2;
+       if(!(field2=(GENFLOAT *)fftw_malloc(field_size*sizeof(GENFLOAT)))){
        	fprintf(stderr,"Error allocating memory for second field\n");
        	return 1;
        }
-       memset(field, 0, field_size*sizeof(float));
-       memset(field2, 0, field_size*sizeof(float));
-       fftwf_complex * outfield2=(fftwf_complex *) &field2[0];
-       fftwf_plan pl2=fftwf_plan_dft_r2c_3d(field_dims,field_dims,field_dims,&field2[0],outfield2, FFTW_ESTIMATE);
+       memset(field, 0, field_size*sizeof(GENFLOAT));
+       memset(field2, 0, field_size*sizeof(GENFLOAT));
+       fftw_complex * outfield2=(fftw_complex *) &field2[0];
+       fftw_plan pl2=fftw_plan_dft_r2c_3d(field_dims,field_dims,field_dims,&field2[0],outfield2, FFTW_ESTIMATE);
        //Get the DM
        double total_mass = 0;
        if (use_hdf5){
@@ -289,9 +289,9 @@ int main(int argc, char* argv[])
        else 
            read_fieldize(field2,snap,crosstype, box, field_dims, &total_mass2);
        //Do FFT of DM
-	   fftwf_execute(pl);
+	   fftw_execute(pl);
        //Do FFT of other species
-	   fftwf_execute(pl2);
+	   fftw_execute(pl2);
        powerspectrum(field_dims,outfield, outfield2, nrbins, power,count,keffs, total_mass, total_mass2);
        filename=outdir;
        filename+="/PK-DMx"+type_str(crosstype)+"-"+infiles.substr(last+1);
@@ -307,8 +307,8 @@ int main(int argc, char* argv[])
   free(power);
   free(count);
   free(keffs);
-  fftwf_free(field);
-  fftwf_destroy_plan(pl);
+  fftw_free(field);
+  fftw_destroy_plan(pl);
   return 0;
 }
 

@@ -21,11 +21,14 @@
 #include "gadgetreader.hpp"
 #include <string>
 
+//This is the type for reading particles
 #ifdef DOUBLE_PRECISION
     #define FLOAT_TYPE double
 #else
     #define FLOAT_TYPE float
 #endif
+//This is the type for internal computations
+#define GENFLOAT double
 
 /** Returns the next power of two greater than its argument*/
 int nexttwo(int);
@@ -55,7 +58,7 @@ std::string type_str(int type);
  * @param type Particle type to read; since POS always has all types, complications are minimal
  * @param box Boxsize, in kpc
  * @param field_dims Length of side of the field above. */
-int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box, int field_dims, double * total_mass);
+int read_fieldize(GENFLOAT * field, GadgetReader::GSnap* snap, int type, double box, int field_dims, double * total_mass);
 
 /** Wrapper function to read the data from an HDF5 snapshot and pass it to fieldize.
  * Returns 1 is some error occured allocating memory, and zero if successful.
@@ -66,7 +69,7 @@ int read_fieldize(float * field, GadgetReader::GSnap* snap, int type, double box
  * @param field_dims Length of side of the field above.
  * @param fileno number of file to use.
  * @param total_mass Variable to store total mass of particles */
-int read_fieldize_hdf5(float * field, const char *ffname, int type, double box, int field_dims, double * total_mass,int fileno);
+int read_fieldize_hdf5(GENFLOAT * field, const char *ffname, int type, double box, int field_dims, double * total_mass,int fileno);
 
 /* this routine loads header data from the first file of an HDF5 snapshot.*/
 int load_hdf5_header(const char *ffname, double  *atime, double *redshift, double *box100, double *h100, int64_t *npart_all, double * mass);
@@ -87,7 +90,7 @@ std::vector<std::string> find_hdf_set(const std::string& infname);
  * @param mass Particle mass if constant for all of this type.
  * @param extra If this is 1, assume that the output is about to be handed to an FFTW in-place routine, 
  * and make it skip the last 2 places of the each row in the last dimension */
-int fieldize(double boxsize, int dims, float *out, int64_t segment_particles, FLOAT_TYPE *positions, FLOAT_TYPE * masses, double mass, int extra);
+int fieldize(double boxsize, int dims, GENFLOAT *out, int64_t segment_particles, FLOAT_TYPE *positions, FLOAT_TYPE * masses, double mass, int extra);
 
 #ifdef __cplusplus
 extern "C" {
@@ -98,7 +101,7 @@ extern "C" {
  * @param ky k_y
  * @param kz k_z
  * @param n Total size of grid */
-float invwindow(int kx, int ky, int kz, int n);
+GENFLOAT invwindow(int kx, int ky, int kz, int n);
 /** Wrapper around FFTW to calculate the 3D power spectrum from a 3D field.
  * Returns 0.
  * @param dims Size of grid to FFT.
@@ -107,13 +110,13 @@ float invwindow(int kx, int ky, int kz, int n);
  * we will need some contiguous memory space after the actual data in field.
  * The real input data has size dims**3
  * The output has size dims*dims*(dims/2+1) *complex* values
- * So we must allocate 2*dims*dims*(dims/2+1)*sizeof(float).
+ * So we must allocate 2*dims*dims*(dims/2+1)*sizeof(GENFLOAT).
  * @param outfield2 Pointer to second array, just like outfield. What is computed is outfield*outfield2. May be the same array.
  * @param nrbins Number of bins in the output.
  * @param power Pointer to memory to output powerspectrum to. Needs to store nrbins values.
  * @param count Ditto for modes per bin
  * @param keffs Ditto for effective k.*/
-int powerspectrum(int dims, fftwf_complex* outfield, fftwf_complex* outfield2, int nrbins, double *power, int *count, double *keffs, double total_mass, double total_mass2);
+int powerspectrum(int dims, fftw_complex* outfield, fftw_complex* outfield2, int nrbins, double *power, int *count, double *keffs, double total_mass, double total_mass2);
 
 #ifdef __cplusplus
 }
