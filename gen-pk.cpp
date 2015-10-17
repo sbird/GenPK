@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
     int tmp=2*nexttwo(cbrt(npart_total[type]));
     field_dims=std::max(field_dims, std::min(tmp, FIELD_DIMS));
   }
-  const int nrbins=200;
+  const int nrbins=field_dims;
   //Memory for the field
   printf("FFT grid dimension: %u\n",field_dims);
   const size_t field_size = 2*field_dims*field_dims*(field_dims/2+1);
