@@ -31,7 +31,7 @@ using namespace std;
 BOOST_AUTO_TEST_CASE(check_fieldize)
 {
         const int dims=5;
-        float field[2*dims*dims*(dims/2+1)]={0};
+        GENFLOAT field[2*dims*dims*(dims/2+1)]={0};
         FLOAT_TYPE pos[30];
         for(int i=0; i<30; i++)
                 pos[i]=i/3.;
@@ -58,17 +58,17 @@ BOOST_AUTO_TEST_CASE(check_invwindow)
 
 BOOST_AUTO_TEST_CASE(check_powerspectrum)
 {
-       float field[2*4*4*(4/2+1)]={1};
+       GENFLOAT field[2*4*4*(4/2+1)]={1};
        double pow[4];
        int count[4];
        double keffs[4];
-       fftwf_complex* outfield;
-       outfield=(fftwf_complex *) &field[0];
+       fftw_complex* outfield;
+       outfield=(fftw_complex *) &field[0];
        for(int i=0; i<32; i++)
                field[i]+=1;
-       fftwf_plan pl=fftwf_plan_dft_r2c_3d(4,4,4,&field[0],outfield, FFTW_ESTIMATE);
+       fftw_plan pl=fftw_plan_dft_r2c_3d(4,4,4,&field[0],outfield, FFTW_ESTIMATE);
        double total_mass = 4*4*4;
-       fftwf_execute(pl);
+       fftw_execute(pl);
        BOOST_REQUIRE_EQUAL(powerspectrum(4,outfield,outfield,4,pow,count,keffs, total_mass, total_mass),0);
        FLOATS_NEAR_TO(keffs[2],1.86825);
        BOOST_CHECK_EQUAL(count[1],12);
@@ -77,12 +77,12 @@ BOOST_AUTO_TEST_CASE(check_powerspectrum)
        FLOATS_NEAR_TO(pow[1],0.00509005);
        FLOATS_NEAR_TO(pow[2],0.00258238);
        FLOATS_NEAR_TO(pow[3],0);
-       fftwf_destroy_plan(pl);
+       fftw_destroy_plan(pl);
 }
 
 BOOST_AUTO_TEST_CASE(check_read_fieldize)
 {
-        float field[2*4*4*(4/2+1)]={0};
+        GENFLOAT field[2*4*4*(4/2+1)]={0};
         double total_mass = 0;
         GSnap snap("test_g2_snap", false);
         BOOST_REQUIRE_MESSAGE(snap.GetNumFiles()==2,"Failed to find test snapshot data");
