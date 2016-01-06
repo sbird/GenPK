@@ -58,14 +58,18 @@ BOOST_AUTO_TEST_CASE(check_invwindow)
 
 BOOST_AUTO_TEST_CASE(check_powerspectrum)
 {
-       GENFLOAT field[2*4*4*(4/2+1)]={1};
+       GENFLOAT field[2*4*4*(4/2+1)]={0};
        double pow[10];
        int count[10];
        double keffs[10];
        fftw_complex* outfield;
        outfield=(fftw_complex *) &field[0];
-       for(int i=0; i<32; i++)
-               field[i]+=1;
+       //Pad the input in an in-place transform
+       for(int i=0; i<32; i++){
+               int ii = i/4;
+               field[6*ii+i%4]=1;
+       }
+       field[0] = 2;
        fftw_plan pl=fftw_plan_dft_r2c_3d(4,4,4,&field[0],outfield, FFTW_ESTIMATE);
        double total_mass = 4*4*4;
        fftw_execute(pl);
@@ -73,9 +77,9 @@ BOOST_AUTO_TEST_CASE(check_powerspectrum)
        FLOATS_NEAR_TO(keffs[2],1.73205);
        BOOST_CHECK_EQUAL(count[1],12);
        BOOST_CHECK_EQUAL(count[0],6);
-       FLOATS_NEAR_TO(pow[0],0.0444665);
-       FLOATS_NEAR_TO(pow[1],0.00509005);
-       FLOATS_NEAR_TO(pow[2],0.00258238);
+       FLOATS_NEAR_TO(pow[0],0.0677526);
+       FLOATS_NEAR_TO(pow[1],0.000565561);
+       FLOATS_NEAR_TO(pow[2],0.000860793);
        FLOATS_NEAR_TO(pow[9],0);
        fftw_destroy_plan(pl);
 }
