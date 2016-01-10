@@ -117,8 +117,12 @@ std::string find_first_hdf_file(const std::string& infname)
   if(H5Fis_hdf5(fname.c_str()) <= 0){
      /*If we weren't, were we handed an HDF5 file without the suffix?*/
      fname = infname+std::string(".0.hdf5");
-     if (H5Fis_hdf5(fname.c_str()) <= 0)
-        fname = std::string();
+     if (H5Fis_hdf5(fname.c_str()) <= 0) {
+        fname = infname+std::string(".hdf5");
+        if (H5Fis_hdf5(fname.c_str()) <= 0) {
+            fname = std::string();
+        }
+     }
   }
 
   /* Restore previous error handler */
