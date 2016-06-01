@@ -22,7 +22,7 @@ ifeq ($(CC),cc)
   endif
 endif
 
-LFLAGS += -lfftw3_threads -lfftw3 -lpthread -lrgad -L${GREAD} -Wl,-rpath,$(GREAD) -lhdf5 -lhdf5_hl
+LFLAGS += -lfftw3_threads -lfftw3 -lpthread -lrgad -L${GREAD} -Wl,-rpath,$(GREAD),--no-add-needed,--as-needed -lhdf5 -lhdf5_hl
 #Are we using gcc or icc?
 ifeq (icc,$(findstring icc,${CC}))
   CFLAGS +=-O2 -g -c -w1 -openmp $(OPT) -I${GREAD}
@@ -42,7 +42,7 @@ objs = powerspectrum.o fieldize.o read_fieldize.o utils.o
 all:gen-pk
 
 gen-pk: gen-pk.o ${objs}
-	${LINK} ${LFLAGS} $^ -o $@
+	${LINK} $^ ${LFLAGS} -o $@
 
 powerspectrum.o: powerspectrum.c gen-pk.h
 fieldize.o:fieldize.cpp gen-pk.h
@@ -51,7 +51,7 @@ utils.o: utils.cpp
 gen-pk.o:gen-pk.cpp gen-pk.h 
 
 btest: test.cpp ${objs}
-	${LINK} $(OPT) -I${GREAD} ${LFLAGS} -lboost_unit_test_framework $^ -o $@
+	${LINK} $(OPT) -I${GREAD} $^ ${LFLAGS} -lboost_unit_test_framework -o $@
 
 test: btest
 	@./btest
