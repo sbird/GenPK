@@ -74,13 +74,14 @@ BOOST_AUTO_TEST_CASE(check_powerspectrum)
        double total_mass = 4*4*4;
        fftw_execute(pl);
        BOOST_REQUIRE_EQUAL(powerspectrum(4,outfield,outfield,10,pow,count,keffs, total_mass, total_mass),0);
-       FLOATS_NEAR_TO(keffs[2],1.73205);
-       BOOST_CHECK_EQUAL(count[1],12);
+       FLOATS_NEAR_TO(keffs[2],sqrt(2));
+       BOOST_CHECK_EQUAL(count[2],12);
+       BOOST_CHECK_EQUAL(count[1],0);
        BOOST_CHECK_EQUAL(count[0],6);
        FLOATS_NEAR_TO(pow[0],0.0677526);
-       FLOATS_NEAR_TO(pow[1],0.000565561);
-       FLOATS_NEAR_TO(pow[2],0.000860793);
-       FLOATS_NEAR_TO(pow[9],0);
+       FLOATS_NEAR_TO(pow[1],0.);
+       FLOATS_NEAR_TO(pow[2],0.000565561);
+       FLOATS_NEAR_TO(pow[9],0.0550908);
        fftw_destroy_plan(pl);
 }
 
