@@ -31,7 +31,8 @@ gen-pk: gen-pk.o ${objs}
 librgad.so:
 	cd $(GREAD); VPATH=$(GREAD) make $@
 
-powerspectrum.o: powerspectrum.c gen-pk.h
+powerspectrum.o: powerspectrum.c
+	$(CC) -std=gnu99 $(CFLAGS) $^
 %.o: %.cpp gen-pk.h
 
 btest: test.cpp ${objs}
