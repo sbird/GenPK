@@ -1,6 +1,6 @@
 
 #Change this to where you installed GadgetReader
-GREAD=${CURDIR}/../GadgetReader
+GREAD=${CURDIR}/GadgetReader
 
 #If Gadget was compiled with double precision output, you should define this flag
 #to read it correctly
