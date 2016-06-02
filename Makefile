@@ -6,22 +6,6 @@ GREAD=${CURDIR}/../GadgetReader
 #to read it correctly
 #OPT = -DDOUBLE_PRECISION
 
-ifeq ($(CC),cc)
-  ICC:=$(shell which icc --tty-only 2>&1)
-  #Can we find icc?
-  ifeq (/icc,$(findstring /icc,${ICC}))
-     CC = icc -vec_report0
-     CXX = icpc
-  else
-     GCC:=$(shell which gcc --tty-only 2>&1)
-     #Can we find gcc?
-     ifeq (/gcc,$(findstring /gcc,${GCC}))
-        CC = gcc
-        CXX = g++
-     endif
-  endif
-endif
-
 LFLAGS += -lfftw3_threads -lfftw3 -lpthread -lrgad -L${GREAD} -Wl,-rpath,$(GREAD),--no-add-needed,--as-needed -lhdf5 -lhdf5_hl
 #Are we using gcc or icc?
 ifeq (icc,$(findstring icc,${CC}))
