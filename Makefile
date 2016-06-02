@@ -23,33 +23,28 @@ CXXFLAGS+= $(PPFLAGS)
 objs = powerspectrum.o fieldize.o read_fieldize.o utils.o
 .PHONY:all love clean test dist
 
-all:gen-pk
+all: librgad.so gen-pk
 
 gen-pk: gen-pk.o ${objs}
 	${LINK} $^ ${LFLAGS} -o $@
 
+librgad.so:
+	cd $(GREAD); VPATH=$(GREAD) make $@
+
 powerspectrum.o: powerspectrum.c gen-pk.h
-fieldize.o:fieldize.cpp gen-pk.h
-read_fieldize.o: read_fieldize.cpp gen-pk.h
-utils.o: utils.cpp
-gen-pk.o:gen-pk.cpp gen-pk.h 
+%.o: %.cpp gen-pk.h
 
 btest: test.cpp ${objs}
 	${LINK} $(OPT) -I${GREAD} $^ ${LFLAGS} -lboost_unit_test_framework -o $@
 
-test: btest
-	@./btest
+test: btest librgad.so
+	./$<
 
 dist: Makefile README $(head) Doxyfile gen-pk.cpp  read_fieldize.cpp  test.cpp  utils.cpp gen-pk.h fieldize.cpp powerspectrum.c test_g2_snap.0 test_g2_snap.1
 	tar -czf genpk.tar.gz $^
 
 doc: Doxyfile gen-pk.h
 	doxygen $<
-
-love:
-	@echo "Not war?" ; sleep 3
-	@echo "Look, I'm not equipped for that, okay?" ; sleep 2
-	@echo "Contact your hardware vendor for appropriate mods."
 
 clean:
 	-rm -f ${objs} gen-pk.o gen-pk
