@@ -6,7 +6,7 @@ GREAD=${CURDIR}/GadgetReader
 #to read it correctly
 #OPT = -DDOUBLE_PRECISION
 
-LFLAGS += -lfftw3_threads -lfftw3 -lpthread -lrgad -L${GREAD} -Wl,-rpath,$(GREAD),--no-add-needed,--as-needed -lhdf5 -lhdf5_hl
+LFLAGS += -lfftw3_threads -lfftw3 -lpthread -lrgad -L${GREAD} -Wl,-rpath,$(GREAD),--no-add-needed,--as-needed -lhdf5 -lhdf5_hl -Lbigfile/src -lbigfile
 #Are we using gcc or icc?
 ifeq (icc,$(findstring icc,${CC}))
   CFLAGS +=-O2 -g -c -w1 -openmp $(OPT) -I${GREAD}
@@ -20,7 +20,7 @@ PRO=#-pg
 #gcc
 PPFLAGS:=$(CFLAGS)
 CXXFLAGS+= $(PPFLAGS)
-objs = powerspectrum.o fieldize.o read_fieldize.o utils.o
+objs = powerspectrum.o fieldize.o read_fieldize.o utils.o read_fieldize_bigfile.o
 .PHONY:all love clean test dist
 
 all: librgad.so gen-pk
@@ -30,6 +30,11 @@ gen-pk: gen-pk.o ${objs}
 
 librgad.so:
 	cd $(GREAD); VPATH=$(GREAD) make $@
+
+read_fieldize_bigfile.o: bigfile/src/libbigfile.a
+
+bigfile/src/libbigfile.a:
+	cd bigfile/src; VPATH=bigfile/src make libbigfile.a
 
 powerspectrum.o: powerspectrum.c
 	$(CC) -std=gnu99 $(CFLAGS) $^

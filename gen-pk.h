@@ -118,6 +118,9 @@ GENFLOAT invwindow(int kx, int ky, int kz, int n);
  * @param keffs Ditto for effective k.*/
 int powerspectrum(int dims, fftw_complex* outfield, fftw_complex* outfield2, int nrbins, double *power, int *count, double *keffs, double total_mass, double total_mass2);
 
+int is_bigfile(const char * infile);
+int load_bigfile_header(const char *fname, double  *atime, double *redshift, double *box100, double *h100, int64_t *npart_all, double * mass, double *Omega0);
+int read_fieldize_bigfile(GENFLOAT * field, const char *fname, int type, double box, int field_dims, double *total_mass, int64_t* npart_all, double * mass, double Omega0);
 #ifdef __cplusplus
 }
 #endif

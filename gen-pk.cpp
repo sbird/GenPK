@@ -80,8 +80,10 @@ int main(int argc, char* argv[])
   char c;
   int crosstype = -1;
   double box;
+  double Omega0;
   GSnap * snap = NULL;
   bool use_hdf5 = false;
+  bool use_bigfile = false;
   fftw_plan pl;
   fftw_complex *outfield;
   while((c = getopt(argc, argv, "i:j:o:c:h")) !=-1){
@@ -118,6 +120,23 @@ int main(int argc, char* argv[])
       double atime, redshift, h100;
       //Get the header and print out some useful things
       if(load_hdf5_header(fnames[0].c_str(), &atime, &redshift, &box, &h100, npart_total, mass)) {
+        fprintf(stderr, "Could not load header\n");
+        return 1;
+      }
+  }
+  else
+#endif
+#ifndef NOBIGFILE
+  if(is_bigfile(infiles.c_str())) {
+      fprintf(stderr, "Found %lu hdf5 files in snapshot\n",fnames.size());
+      /*See if we have been handed the first file of a set:
+       * our method for dealing with this closely mirrors
+       * HDF5s family mode, but we cannot use this, because
+       * our files may not all be the same size.*/
+      use_bigfile = true;
+      double atime, redshift, h100;
+      //Get the header and print out some useful things
+      if(load_bigfile_header(infiles.c_str(), &atime, &redshift, &box, &h100, npart_total, mass, &Omega0)) {
         fprintf(stderr, "Could not load header\n");
         return 1;
       }
@@ -186,6 +205,9 @@ int main(int argc, char* argv[])
               for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
                   read_fieldize_hdf5(field, fnames[fileno].c_str(), type, box, field_dims, &total_mass, fileno);
           }
+          else if(use_bigfile) {
+                  read_fieldize_bigfile(field, infiles.c_str(), type, box, field_dims, &total_mass, npart_total, mass, Omega0);
+          }
           else if(read_fieldize(field,snap,type, box, field_dims, &total_mass))
                   continue;
           printf("total_mass in type %d = %g\n", type, total_mass);
@@ -235,6 +257,9 @@ int main(int argc, char* argv[])
               for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
                   read_fieldize_hdf5(field, fnames[fileno].c_str(), 1, box, field_dims, &total_mass, fileno);
           }
+          else if(use_bigfile) {
+                  read_fieldize_bigfile(field, infiles.c_str(), type, box, field_dims, &total_mass, npart_total, mass, Omega0);
+          }
           else if(read_fieldize(field,snap,type, box, field_dims, &total_mass))
             continue;
           double total_mass2 = 0;
@@ -242,6 +267,9 @@ int main(int argc, char* argv[])
           if (use_hdf52){
               for(unsigned fileno = 0; fileno < fnames2.size(); ++fileno)
                   read_fieldize_hdf5(field2, fnames2[fileno].c_str(), 1, box, field_dims, &total_mass2, fileno);
+          }
+          else if(use_bigfile) {
+                  read_fieldize_bigfile(field, infiles.c_str(), type, box, field_dims, &total_mass, npart_total, mass, Omega0);
           }
           else if(read_fieldize(field2,snap2,type, box, field_dims, &total_mass2))
             continue;
@@ -278,6 +306,9 @@ int main(int argc, char* argv[])
            for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
                read_fieldize_hdf5(field, fnames[fileno].c_str(), 1, box, field_dims, &total_mass, fileno);
        }
+       else if(use_bigfile) {
+               read_fieldize_bigfile(field, infiles.c_str(), type, box, field_dims, &total_mass, npart_total, mass, Omega0);
+       }
        else 
            read_fieldize(field,snap,1, box, field_dims, &total_mass);
        //Get the other species
@@ -285,6 +316,9 @@ int main(int argc, char* argv[])
        if (use_hdf5){
            for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
                read_fieldize_hdf5(field2, fnames[fileno].c_str(), crosstype, box, field_dims, &total_mass2, fileno);
+       }
+       else if(use_bigfile) {
+               read_fieldize_bigfile(field, infiles.c_str(), type, box, field_dims, &total_mass, npart_total, mass, Omega0);
        }
        else 
            read_fieldize(field2,snap,crosstype, box, field_dims, &total_mass2);
