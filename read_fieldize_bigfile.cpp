@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "gen-pk.h"
 #ifndef NOBIGFILE
 #include "bigfile/src/bigfile.h"
