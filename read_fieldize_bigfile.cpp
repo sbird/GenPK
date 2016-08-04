@@ -28,8 +28,8 @@ int load_bigfile_header(const char *fname, double  *atime, double *redshift, dou
                   big_file_get_error_message());
   }
   BigBlock bh = {0};
-  if(0 != big_file_open_block(&bf, &bh, "header")) {
-      fprintf(stderr,"Failed to create block at %s:%s\n", "header",
+  if(0 != big_file_open_block(&bf, &bh, "Header")) {
+      fprintf(stderr,"Failed to create block at %s:%s\n", "Header",
                   big_file_get_error_message());
   }
   if(
