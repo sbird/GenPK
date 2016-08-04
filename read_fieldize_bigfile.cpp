@@ -36,14 +36,14 @@ int load_bigfile_header(const char *fname, double  *atime, double *redshift, dou
   (0 != big_block_get_attr(&bh, "TotNumPart", npart_all, "u8", N_TYPE)) ||
   (0 != big_block_get_attr(&bh, "MassTable", mass, "f8", N_TYPE)) ||
   (0 != big_block_get_attr(&bh, "Time", atime, "f8", 1)) ||
-  (0 != big_block_get_attr(&bh, "Redshift", redshift, "f8", 1)) ||
   (0 != big_block_get_attr(&bh, "HubbleParam", h100, "f8", 1)) ||
   (0 != big_block_get_attr(&bh, "Omega0", Omega0, "f8", 1)) ||
-  (0 != big_block_get_attr(&bh, "OmegaL", &OmegaLambda, "f8", 1)) ||
+  (0 != big_block_get_attr(&bh, "OmegaLambda", &OmegaLambda, "f8", 1)) ||
   (0 != big_block_get_attr(&bh, "BoxSize", box100, "f8", 1))) {
       fprintf(stderr,"Failed to read attr: %s\n",
                   big_file_get_error_message());
   }
+  *redshift = 1/(*atime) - 1;
   if(big_block_close(&bh) ||
         big_file_close(&bf)) {
       fprintf(stderr,"Failed to close block or file: %s\n",
