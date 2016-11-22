@@ -21,11 +21,13 @@ int load_bigfile_header(const char *fname, double  *atime, double *redshift, dou
   if(0 != big_file_open(&bf, fname)) {
       fprintf(stderr,"Failed to open snapshot at %s:%s\n", fname,
                   big_file_get_error_message());
+      return 1;
   }
   BigBlock bh = {0};
   if(0 != big_file_open_block(&bf, &bh, "Header")) {
       fprintf(stderr,"Failed to create block at %s:%s\n", "Header",
                   big_file_get_error_message());
+      return 1;
   }
   if(
   (0 != big_block_get_attr(&bh, "TotNumPart", npart_all, "u8", N_TYPE)) ||
@@ -37,12 +39,14 @@ int load_bigfile_header(const char *fname, double  *atime, double *redshift, dou
   (0 != big_block_get_attr(&bh, "BoxSize", box100, "f8", 1))) {
       fprintf(stderr,"Failed to read attr: %s\n",
                   big_file_get_error_message());
+      return 1;
   }
   *redshift = 1/(*atime) - 1;
   if(big_block_close(&bh) ||
         big_file_close(&bf)) {
       fprintf(stderr,"Failed to close block or file: %s\n",
                   big_file_get_error_message());
+      return 1;
   }
   printf("NumPart=[%ld,%ld,%ld,%ld,%ld,%ld], ",npart_all[0],npart_all[1],npart_all[2],npart_all[3],npart_all[4],npart_all[5]);
   printf("Masses=[%g %g %g %g %g %g], ",mass[0],mass[1],mass[2],mass[3],mass[4],mass[5]);
