@@ -35,7 +35,7 @@ int load_bigfile_header(const char *fname, double  *atime, double *redshift, dou
   (0 != big_block_get_attr(&bh, "Time", atime, "f8", 1)) ||
   (0 != big_block_get_attr(&bh, "HubbleParam", h100, "f8", 1)) ||
   (0 != big_block_get_attr(&bh, "Omega0", Omega0, "f8", 1)) ||
-  (0 != big_block_get_attr(&bh, "OmegaLambda", &OmegaLambda, "f8", 1)) ||
+  (0 != big_block_get_attr(&bh, "OmegaL", &OmegaLambda, "f8", 1)) ||
   (0 != big_block_get_attr(&bh, "BoxSize", box100, "f8", 1))) {
       fprintf(stderr,"Failed to read attr: %s\n",
                   big_file_get_error_message());
