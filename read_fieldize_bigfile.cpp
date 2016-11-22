@@ -97,11 +97,11 @@ int read_fieldize_bigfile(GENFLOAT * field, const char *fname, int type, double 
         for(int i = 0; i<npart_all[type]; i++)
             total_mass_this_file += ((float *)massarray.data)[i];
         *total_mass += total_mass_this_file;
-  }
-  if(big_block_close(&bb) ||
-        big_file_close(&bf)) {
-      fprintf(stderr,"Failed to close block or file: %s\n",
-                  big_file_get_error_message());
+        if(big_block_close(&bb) ||
+              big_file_close(&bf)) {
+            fprintf(stderr,"Failed to close block or file: %s\n",
+                        big_file_get_error_message());
+        }
   }
   //Do the final summation here to avoid fp roundoff
   *total_mass += mass[type]*npart_all[type];
