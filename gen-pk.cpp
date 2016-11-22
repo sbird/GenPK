@@ -128,11 +128,6 @@ int main(int argc, char* argv[])
 #endif
 #ifndef NOBIGFILE
   if(is_bigfile(infiles.c_str())) {
-      fprintf(stderr, "Found %lu hdf5 files in snapshot\n",fnames.size());
-      /*See if we have been handed the first file of a set:
-       * our method for dealing with this closely mirrors
-       * HDF5s family mode, but we cannot use this, because
-       * our files may not all be the same size.*/
       use_bigfile = true;
       double atime, redshift, h100;
       //Get the header and print out some useful things

@@ -3,11 +3,6 @@
 #ifndef NOBIGFILE
 #include "bigfile/src/bigfile.h"
 
-#ifdef DOUBLE_PRECISION
-    #define H5_DATASET_READ H5LTread_dataset_double
-#else
-    #define H5_DATASET_READ H5LTread_dataset_float
-#endif
 /*Returns true if an be opened as a BigFile*/
 int is_bigfile(const char * infile)
 {

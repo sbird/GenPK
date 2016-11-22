@@ -6,13 +6,21 @@ GREAD=${CURDIR}/GadgetReader
 #to read it correctly
 #OPT = -DDOUBLE_PRECISION
 
-LFLAGS += -lfftw3_threads -lfftw3 -lpthread -lrgad -L${GREAD} -Wl,-rpath,$(GREAD),--no-add-needed,--as-needed -lhdf5 -lhdf5_hl -Lbigfile/src -lbigfile
+#Check for a pkgconfig; if one exists we are probably debian.
+ifeq ($(shell pkg-config --exists hdf5-serial && echo 1),1)
+	HDF_LINK = $(shell pkg-config --libs hdf5-serial) -lhdf5_hl
+	HDF_INC = $(shell pkg-config --cflags hdf5-serial)
+else
+	HDF_LINK = -lhdf5 -lhdf5_hl
+endif
+
+LFLAGS += -lfftw3_threads -lfftw3 -lpthread -lrgad -L${GREAD} -Wl,-rpath,$(GREAD),--no-add-needed,--as-needed $(HDF_LINK) -Lbigfile/src -lbigfile
 #Are we using gcc or icc?
 ifeq (icc,$(findstring icc,${CC}))
   CFLAGS +=-O2 -g -c -w1 -openmp $(OPT) -I${GREAD}
   LINK +=${CXX} -openmp
 else
-  CFLAGS +=-O2 -ffast-math -g -c -Wall -fopenmp $(OPT) -I${GREAD}
+  CFLAGS +=-O2 -ffast-math -g -c -Wall -fopenmp $(OPT) -I${GREAD} $(HDF_INC)
   LINK +=${CXX} -openmp $(PRO)
   LFLAGS += -lm -lgomp 
 endif
