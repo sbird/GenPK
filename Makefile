@@ -42,7 +42,7 @@ librgad.so:
 read_fieldize_bigfile.o: bigfile/src/libbigfile.a
 
 bigfile/src/libbigfile.a:
-	cd bigfile/src; VPATH=bigfile/src make libbigfile.a
+	cd bigfile/src; VPATH=bigfile/src MPICC=$(CC) make libbigfile.a
 
 powerspectrum.o: powerspectrum.c
 	$(CC) -std=gnu99 $(CFLAGS) $^
