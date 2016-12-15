@@ -36,7 +36,11 @@ all: librgad.so gen-pk
 gen-pk: gen-pk.o ${objs}
 	${LINK} $^ ${LFLAGS} -o $@
 
-librgad.so:
+$(GREAD)/Makefile:
+	git submodule init
+	git submodule update
+
+librgad.so: $(GREAD)/Makefile
 	cd $(GREAD); VPATH=$(GREAD) make $@
 
 read_fieldize_bigfile.o: bigfile/src/libbigfile.a

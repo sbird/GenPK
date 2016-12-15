@@ -2,11 +2,8 @@
 
 This is GenPK, a program to calculate the 3D matter power spectrum. 
 
-To build, first download and build GadgetReader from the same location you got this file. 
-Ideally, GadgetReader  should be in ../GadgetReader. Change the first line of the Makefile 
-if this is not so. 
-
-Make sure FFTW is installed on your system and that the headers are in your PATH.
+To build, first make sure FFTW3 is installed on your system
+and that the headers are in your PATH.
 
 To build, type:
 
