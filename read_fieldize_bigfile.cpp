@@ -16,7 +16,6 @@ int is_bigfile(const char * infile)
 /* this routine loads header data from the first file of an HDF5 snapshot.*/
 int load_bigfile_header(const char *fname, double  *atime, double *redshift, double *box100, double *h100, int64_t *npart_all, double * mass, double *Omega0)
 {
-  double OmegaLambda;
   BigFile bf = {0};
   if(0 != big_file_open(&bf, fname)) {
       fprintf(stderr,"Failed to open snapshot at %s:%s\n", fname,
@@ -35,7 +34,6 @@ int load_bigfile_header(const char *fname, double  *atime, double *redshift, dou
   (0 != big_block_get_attr(&bh, "Time", atime, "f8", 1)) ||
   (0 != big_block_get_attr(&bh, "HubbleParam", h100, "f8", 1)) ||
   (0 != big_block_get_attr(&bh, "Omega0", Omega0, "f8", 1)) ||
-  (0 != big_block_get_attr(&bh, "OmegaL", &OmegaLambda, "f8", 1)) ||
   (0 != big_block_get_attr(&bh, "BoxSize", box100, "f8", 1))) {
       fprintf(stderr,"Failed to read attr: %s\n",
                   big_file_get_error_message());
@@ -50,7 +48,7 @@ int load_bigfile_header(const char *fname, double  *atime, double *redshift, dou
   }
   printf("NumPart=[%ld,%ld,%ld,%ld,%ld,%ld], ",npart_all[0],npart_all[1],npart_all[2],npart_all[3],npart_all[4],npart_all[5]);
   printf("Masses=[%g %g %g %g %g %g], ",mass[0],mass[1],mass[2],mass[3],mass[4],mass[5]);
-  printf("Redshift=%g, Ω_M=%g Ω_L=%g\n",(*redshift),*Omega0,OmegaLambda);
+  printf("Redshift=%g, Ω_M=%g\n",(*redshift),*Omega0);
   printf("Expansion factor = %f\n",(*atime));
   printf("Hubble = %g Box=%g \n",(*h100),(*box100));
   return 0;
