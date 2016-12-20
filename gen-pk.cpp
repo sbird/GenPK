@@ -302,7 +302,7 @@ int main(int argc, char* argv[])
                read_fieldize_hdf5(field, fnames[fileno].c_str(), 1, box, field_dims, &total_mass, fileno);
        }
        else if(use_bigfile) {
-               read_fieldize_bigfile(field, infiles.c_str(), type, box, field_dims, &total_mass, npart_total, mass, Omega0);
+               read_fieldize_bigfile(field, infiles.c_str(), 1, box, field_dims, &total_mass, npart_total, mass, Omega0);
        }
        else 
            read_fieldize(field,snap,1, box, field_dims, &total_mass);
@@ -313,7 +313,7 @@ int main(int argc, char* argv[])
                read_fieldize_hdf5(field2, fnames[fileno].c_str(), crosstype, box, field_dims, &total_mass2, fileno);
        }
        else if(use_bigfile) {
-               read_fieldize_bigfile(field, infiles.c_str(), type, box, field_dims, &total_mass, npart_total, mass, Omega0);
+               read_fieldize_bigfile(field2, infiles.c_str(), crosstype, box, field_dims, &total_mass2, npart_total, mass, Omega0);
        }
        else 
            read_fieldize(field2,snap,crosstype, box, field_dims, &total_mass2);
