@@ -53,7 +53,7 @@ int load_bigfile_header(const char *fname, double  *atime, double *redshift, dou
   printf("Hubble = %g Box=%g \n",(*h100),(*box100));
   return 0;
 }
-  
+
 /* This routine loads particle data from a bigfile snapshot set. */
 int read_fieldize_bigfile(GENFLOAT * field, const char *fname, int type, double box, int field_dims, double *total_mass, int64_t* npart_all, double * mass, double Omega0)
 {
@@ -67,7 +67,7 @@ int read_fieldize_bigfile(GENFLOAT * field, const char *fname, int type, double 
   BigBlock bb = {0};
   snprintf(name,32,"%d/Position",type);
   if(0 != big_file_open_block(&bf, &bb, name)) {
-      fprintf(stderr,"Failed to create block at %s:%s\n", "Position",
+      fprintf(stderr,"Failed to open block at %s:%s\n", name,
                   big_file_get_error_message());
       return 1;
   }
@@ -87,7 +87,12 @@ int read_fieldize_bigfile(GENFLOAT * field, const char *fname, int type, double 
   /* Load particle masses, if present  */
    if(mass[type] == 0){
         double total_mass_this_file=0;
-        snprintf(name,32,"%d/Masses",type);
+        snprintf(name,32,"%d/Mass",type);
+        if(0 != big_file_open_block(&bf, &bb, name)) {
+            fprintf(stderr,"Failed to open block at %s:%s\n", name,
+                  big_file_get_error_message());
+            return 1;
+        }
         if(0 != big_block_read_simple(&bb, 0, npart_all[type], &massarray,"f4")) {
             fprintf(stderr,"Failed to read from block: %s\n", big_file_get_error_message());
             return 1;
