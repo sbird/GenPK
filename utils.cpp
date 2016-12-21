@@ -64,6 +64,8 @@ std::string type_str(int type)
                         return "DM";
                 case NEUTRINO_TYPE:
                         return "nu";
+                case STARS_TYPE:
+                        return "st";			
                 default:
                         return "xx";
         }
