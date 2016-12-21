@@ -18,9 +18,11 @@
 int read_fieldize(GENFLOAT * field, GadgetReader::GSnap* snap, int type, double box, int field_dims, double * total_mass)
 {
         int64_t npart_total,toread;
+        double mass;
         int parts=0;
         int64_t read=0;
         FLOAT_TYPE *pos=NULL;
+        FLOAT_TYPE *masses=NULL;
         //Initially set it to skip all types
         int skip_type=(1<<N_TYPE)-1;
         /*Stars are another type of baryons*/
@@ -30,6 +32,8 @@ int read_fieldize(GENFLOAT * field, GadgetReader::GSnap* snap, int type, double 
          * There are N_TYPE types, so skipping all types is 2^(N_TYPES)-1 and then subtract 2^type for
          * the one we're trying to read*/
         npart_total=(*snap).GetNpart(type);
+        gadget_header head = (*snap).GetHeader();
+        mass = head.mass[type];
         skip_type-=(1<<type);
         int64_t partlen = snap->GetBlockSize("POS ",-1) / snap->GetBlockParts("POS ");
         if ( partlen != 3*sizeof(FLOAT_TYPE) ) {
@@ -39,7 +43,7 @@ int read_fieldize(GENFLOAT * field, GadgetReader::GSnap* snap, int type, double 
         /* Try to allocate enough memory for particle table.
          * Maximum allocation of 512**3/2 particles ~ 768MB. */
         parts=MIN(npart_total,(1<<26));
-        while(!(pos=(FLOAT_TYPE *)malloc(3*parts*sizeof(FLOAT_TYPE)))){
+        if(!(pos=(FLOAT_TYPE *)malloc(3*parts*sizeof(FLOAT_TYPE)))){
                 fprintf(stderr,"Error allocating particle memory of %ld MB for type %d\n",3*parts*sizeof(FLOAT_TYPE)/1024/1024,type);
                 return 1;
         }
@@ -53,6 +57,24 @@ int read_fieldize(GENFLOAT * field, GadgetReader::GSnap* snap, int type, double 
                         free(pos);
                         return 1;
                 }
+                /* Load particle masses, if present  */
+                if(mass == 0){
+                        double total_mass_this_file=0;
+                        if(!(masses=(FLOAT_TYPE *)malloc(parts*sizeof(FLOAT_TYPE)))){
+                            fprintf(stderr,"Error allocating particle memory of %ld MB for type %d\n",parts*sizeof(FLOAT_TYPE)/1024/1024,type);
+                            return 1;
+                        }
+                        if((*snap).GetBlock("MASS",masses,parts,read,skip_type) != parts){
+                            fprintf(stderr, "Error reading mass data for type %d\n",type);
+                            free(masses);
+                            return 1;
+                        }
+                        for(int i = 0; i<parts; i++)
+                            total_mass_this_file += masses[i];
+                        *total_mass += total_mass_this_file;
+                }
+                //Do the final summation here to avoid fp roundoff
+                *total_mass += mass*parts;
                 /*Sanity check the data*/
                 /*for(int i=0; i<npart_read; i++)
                       if(fabs(pos[3*i]) > box || fabs(pos[3*i+1]) > box || fabs(pos[3*i+2]) > box){
@@ -65,7 +87,7 @@ int read_fieldize(GENFLOAT * field, GadgetReader::GSnap* snap, int type, double 
                  * is about to be handed to an FFTW in-place routine,
                  * and set skip the last 2 places of the each row in the last dimension
                  * It is important that pos is not longer than max_int */
-                fieldize(box,field_dims,field,parts,pos, NULL, 1./(npart_total), 1);
+                fieldize(box,field_dims,field,parts,pos, masses, mass, 1);
                 toread-=parts;
                 read+=parts;
         }

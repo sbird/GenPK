@@ -3,7 +3,7 @@
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -92,9 +92,10 @@ BOOST_AUTO_TEST_CASE(check_read_fieldize)
         GSnap snap("test_g2_snap", false);
         BOOST_REQUIRE_MESSAGE(snap.GetNumFiles()==2,"Failed to find test snapshot data");
         BOOST_REQUIRE_EQUAL(read_fieldize(field, &snap, BARYON_TYPE, 3000,4, &total_mass),0);
+        BOOST_REQUIRE_EQUAL(read_fieldize(field, &snap, STARS_TYPE, 3000,4, &total_mass),0);
         FLOATS_NEAR_TO(field[10],0);
-        FLOATS_NEAR_TO(field[0],0.0263588);
-        FLOATS_NEAR_TO(field[15],0.010949);
+        FLOATS_NEAR_TO(field[0]/total_mass,0.026873);
+        FLOATS_NEAR_TO(field[15]/total_mass,0.0188683);
         BOOST_REQUIRE_EQUAL(read_fieldize(field, &snap,BULGE_TYPE, 3000,4, &total_mass),1);
 }
 
