@@ -38,7 +38,7 @@ int nexttwo(int n)
     n--;
     for(i=1;i<sizeof(int)*CHAR_BIT; i<<=1)
        n |= n>>i;
-    return ++n; 
+    return ++n;
 }
 
 void help()
@@ -49,7 +49,8 @@ void help()
 		           "if -j is specified it cross-correlates files specified under -i with files specifed under\n"
 		           "-j (one output per particle type).\n"
                            "If -c is specified the code computes the cross-correlation of that particle type with \n"
-		           "the CDM (type 1) (within the file specified by -i)\n");
+		           "the CDM (type 1) (within the file specified by -i)\n"
+                           "-s (1,0) Determines whether stars are included in the baryon type.\n");
            return;
 }
 

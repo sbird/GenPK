@@ -19,21 +19,18 @@ int read_fieldize(GENFLOAT * field, GadgetReader::GSnap* snap, int type, double 
 {
         int64_t npart_total,toread;
         int parts=0;
-        int64_t npart_stars=0,read=0;
+        int64_t read=0;
         FLOAT_TYPE *pos=NULL;
         //Initially set it to skip all types
         int skip_type=(1<<N_TYPE)-1;
         /*Stars are another type of baryons*/
-        if((*snap).GetNpart(type)==0 || type==STARS_TYPE)
+        if((*snap).GetNpart(type)==0)
           return 1;
         /* Set skip_type, which should include every type *other* than the one we're interested in
          * There are N_TYPE types, so skipping all types is 2^(N_TYPES)-1 and then subtract 2^type for
          * the one we're trying to read*/
         npart_total=(*snap).GetNpart(type);
         skip_type-=(1<<type);
-        /* Add the stars if we are using baryons. */
-        if(type==BARYON_TYPE)
-                npart_stars=(*snap).GetNpart(STARS_TYPE);
         int64_t partlen = snap->GetBlockSize("POS ",-1) / snap->GetBlockParts("POS ");
         if ( partlen != 3*sizeof(FLOAT_TYPE) ) {
             fprintf(stderr, "The pos array uses %ld bytes per particle, instead of %lu.\n You probably want to recompile a different DOUBLE_PRECISION define.\n", partlen, 3*sizeof(FLOAT_TYPE));
@@ -47,9 +44,6 @@ int read_fieldize(GENFLOAT * field, GadgetReader::GSnap* snap, int type, double 
                 return 1;
         }
         toread=npart_total;
-        /*Add stars to total here; we read them in a later call, but
-         * they need to add to the total particle number for mass estimates*/
-        npart_total+=npart_stars;
         while(toread > 0){
                 if(toread < parts){
                         parts=toread;
@@ -74,24 +68,6 @@ int read_fieldize(GENFLOAT * field, GadgetReader::GSnap* snap, int type, double 
                 fieldize(box,field_dims,field,parts,pos, NULL, 1./(npart_total), 1);
                 toread-=parts;
                 read+=parts;
-        }
-        /*Read the stars. This needs to be done in a separate GetBlocks call at the moment*/
-        if(type==BARYON_TYPE){
-                /*Re-allocate in case there are more stars than baryons (unlikely)*/
-                if(npart_stars > parts){
-                        free(pos);
-                        while(!(pos=(FLOAT_TYPE *)malloc(3*npart_stars*sizeof(FLOAT_TYPE)))){
-                                        fprintf(stderr,"Error allocating particle memory of %ld MB for type %d\n",3*npart_stars*sizeof(FLOAT_TYPE)/1024/1024,type);
-                                        return 1;
-                        }
-                }
-                skip_type=(1<<N_TYPE)-(1<<STARS_TYPE);
-                if((*snap).GetBlock("POS ",pos,npart_stars,0,skip_type) != npart_stars){
-                        fprintf(stderr, "Error reading particle data for type %d\n",type);
-                        free(pos);
-                        return 1;
-                }
-                fieldize(box,field_dims,field,npart_stars,pos,NULL, 1./npart_total, 1);
         }
         *total_mass += 1;
         free(pos);

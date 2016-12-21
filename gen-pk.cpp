@@ -3,7 +3,7 @@
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -12,20 +12,20 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. */
 
-/** \mainpage 
- * \section intro_sec Introduction 
- * MatPow is a 3D matter power spectrum estimator, written in C++ and parallelised with OpenMP. 
- * 
+/** \mainpage
+ * \section intro_sec Introduction
+ * MatPow is a 3D matter power spectrum estimator, written in C++ and parallelised with OpenMP.
+ *
  * \section feat_sec Features
  *
- * A matter power spectrum estimator, which can read most Gadget-I and II format files through the use of the 
- * GadgetReader library. Calculates the matter power spectrum quickly, as well as the expected error from 
- * cosmic variance. 
+ * A matter power spectrum estimator, which can read most Gadget-I and II format files through the use of the
+ * GadgetReader library. Calculates the matter power spectrum quickly, as well as the expected error from
+ * cosmic variance.
  *
- * Outputs one file per particle type found. 
+ * Outputs one file per particle type found.
  *
- * \section missing_sec Missing Features 
- * 
+ * \section missing_sec Missing Features
+ *
  * Should rebin to ensure enough modes per bin
  *
  * Use Volker Springel's fold-on-itself to calculate small-scale power below the Nyquist frequency
@@ -38,7 +38,7 @@
  * \section req_sec Requirements
  * A C++ compiler with map, vector, set getopt, and stdint.h
  *
- * GadgetReader library, preferably installed in ../GadgetReader 
+ * GadgetReader library, preferably installed in ../GadgetReader
  * (edit the first line of the Makefile for other locations)
  *
  * FFTW3
@@ -54,7 +54,7 @@
 #include <omp.h>
 #include <stdlib.h>
 
-/** Maximal size of FFT grid. 
+/** Maximal size of FFT grid.
  * In practice 1024 means we need just over 4GB, as sizeof(float)=4*/
 #define FIELD_DIMS 1024
 
@@ -62,11 +62,11 @@ using namespace GadgetReader;
 using namespace std;
 
 
-/** \file 
+/** \file
  * File containing main() */
 
-/** Main function. Accepts arguments, uses GadgetReader to open the snapshot, prints some header info, 
- * allocates FFT memory and creates a plan, calls read_fieldize and powerspectrum, prints the P(k) 
+/** Main function. Accepts arguments, uses GadgetReader to open the snapshot, prints some header info,
+ * allocates FFT memory and creates a plan, calls read_fieldize and powerspectrum, prints the P(k)
  * to a file, and then frees the memory*/
 int main(int argc, char* argv[])
 {
@@ -79,6 +79,7 @@ int main(int argc, char* argv[])
   string infiles(""),jinfiles(""),outdir("");
   char c;
   int crosstype = -1;
+  bool stars_are_baryons = false;
   double box;
   double Omega0;
   GSnap * snap = NULL;
@@ -86,7 +87,7 @@ int main(int argc, char* argv[])
   bool use_bigfile = false;
   fftw_plan pl;
   fftw_complex *outfield;
-  while((c = getopt(argc, argv, "i:j:o:c:h")) !=-1){
+  while((c = getopt(argc, argv, "i:j:o:c:s:h")) !=-1){
     switch(c){
         case 'o':
            outdir=static_cast<string>(optarg);
@@ -94,12 +95,15 @@ int main(int argc, char* argv[])
         case 'i':
            infiles=static_cast<string>(optarg);
            break;
-        case 'j':	      
+        case 'j':
 	   jinfiles=static_cast<string>(optarg);
            break;
         case 'c':
            crosstype = static_cast<int>(atoi(optarg));
            break;
+        case 's':
+            stars_are_baryons = static_cast<bool>(atoi(optarg));
+            break;
         case 'h':
         default:
            help();
@@ -199,12 +203,23 @@ int main(int argc, char* argv[])
           if (use_hdf5){
               for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
                   read_fieldize_hdf5(field, fnames[fileno].c_str(), type, box, field_dims, &total_mass, fileno);
+              if(type == 0 && stars_are_baryons) {
+                for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
+                  read_fieldize_hdf5(field, fnames[fileno].c_str(), STARS_TYPE, box, field_dims, &total_mass, fileno);
+              }
           }
           else if(use_bigfile) {
                   read_fieldize_bigfile(field, infiles.c_str(), type, box, field_dims, &total_mass, npart_total, mass, Omega0);
+                  if(type == 0 && stars_are_baryons) {
+                      read_fieldize_bigfile(field, infiles.c_str(), STARS_TYPE, box, field_dims, &total_mass, npart_total, mass, Omega0);
+                  }
           }
-          else if(read_fieldize(field,snap,type, box, field_dims, &total_mass))
-                  continue;
+          else {
+              read_fieldize(field,snap,type, box, field_dims, &total_mass);
+              if(type == 0 && stars_are_baryons) {
+                  read_fieldize(field,snap,STARS_TYPE, box, field_dims, &total_mass);
+              }
+          }
           printf("total_mass in type %d = %g\n", type, total_mass);
           fftw_execute(pl);
           if(powerspectrum(field_dims,outfield, outfield, nrbins, power,count,keffs, total_mass, total_mass))
@@ -304,7 +319,7 @@ int main(int argc, char* argv[])
        else if(use_bigfile) {
                read_fieldize_bigfile(field, infiles.c_str(), 1, box, field_dims, &total_mass, npart_total, mass, Omega0);
        }
-       else 
+       else
            read_fieldize(field,snap,1, box, field_dims, &total_mass);
        //Get the other species
        double total_mass2 = 0;
@@ -315,7 +330,7 @@ int main(int argc, char* argv[])
        else if(use_bigfile) {
                read_fieldize_bigfile(field2, infiles.c_str(), crosstype, box, field_dims, &total_mass2, npart_total, mass, Omega0);
        }
-       else 
+       else
            read_fieldize(field2,snap,crosstype, box, field_dims, &total_mass2);
        //Do FFT of DM
 	   fftw_execute(pl);
