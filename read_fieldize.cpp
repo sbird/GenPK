@@ -11,7 +11,7 @@
 #endif
 
 #define MIN(a,b) ( (a) < (b) ? (a) : (b))
-/** \file 
+/** \file
  * Defines read_fieldize() , wraps fieldize() and GadgetReader */
 
 /** read_fieldize: reads particles from a Gadget format particle catalogue and places them on a grid, using cloud-in-cell*/
@@ -27,7 +27,7 @@ int read_fieldize(GENFLOAT * field, GadgetReader::GSnap* snap, int type, double 
         if((*snap).GetNpart(type)==0 || type==STARS_TYPE)
           return 1;
         /* Set skip_type, which should include every type *other* than the one we're interested in
-         * There are N_TYPE types, so skipping all types is 2^(N_TYPES)-1 and then subtract 2^type for 
+         * There are N_TYPE types, so skipping all types is 2^(N_TYPES)-1 and then subtract 2^type for
          * the one we're trying to read*/
         npart_total=(*snap).GetNpart(type);
         skip_type-=(1<<type);
@@ -47,7 +47,7 @@ int read_fieldize(GENFLOAT * field, GadgetReader::GSnap* snap, int type, double 
                 return 1;
         }
         toread=npart_total;
-        /*Add stars to total here; we read them in a later call, but 
+        /*Add stars to total here; we read them in a later call, but
          * they need to add to the total particle number for mass estimates*/
         npart_total+=npart_stars;
         while(toread > 0){
@@ -230,7 +230,7 @@ int load_hdf5_header(const char *ffname, double  *atime, double *redshift, doubl
         return -1;
   }
   /* Read some header functions */
-  
+
   if(H5LTget_attribute_double(hdf_group,".","Time",atime) ||
      H5LTget_attribute_double(hdf_group,".","Redshift", redshift) ||
      H5LTget_attribute_double(hdf_group,".","BoxSize", box100) ||
@@ -251,11 +251,11 @@ int load_hdf5_header(const char *ffname, double  *atime, double *redshift, doubl
   for(i = 0; i< N_TYPE; i++)
           npart_all[i]+=(1L<<32)*npart[i];
   H5LTget_attribute(hdf_group,".","MassTable",H5T_NATIVE_DOUBLE, mass);
-  
+
   /*Close header*/
   H5Gclose(hdf_group);
   H5Fclose(hdf_file);
-  
+
   printf("NumPart=[%ld,%ld,%ld,%ld,%ld,%ld], ",npart_all[0],npart_all[1],npart_all[2],npart_all[3],npart_all[4],npart_all[5]);
   printf("Masses=[%g %g %g %g %g %g], ",mass[0],mass[1],mass[2],mass[3],mass[4],mass[5]);
   printf("Redshift=%g, Ω_M=%g Ω_L=%g\n",(*redshift),Omega0,OmegaLambda);
@@ -263,7 +263,7 @@ int load_hdf5_header(const char *ffname, double  *atime, double *redshift, doubl
   printf("Hubble = %g Box=%g \n",(*h100),(*box100));
   return 0;
 }
-  
+
 /* This routine loads particle data from a single HDF5 snapshot file.
  * A snapshot may be distributed into multiple files. */
 int read_fieldize_hdf5(GENFLOAT * field, const char *ffname, int type, double box, int field_dims, double * total_mass, int fileno)
@@ -297,6 +297,9 @@ int read_fieldize_hdf5(GENFLOAT * field, const char *ffname, int type, double bo
           return -1;
   }
   H5Gclose(hdf_group);
+  /*If there are none of this particle in this file, do nothing.*/
+  if(npart[type] == 0)
+      return 0;
   /*Open particle data*/
   snprintf(name,16,"/PartType%d",type);
 
