@@ -270,6 +270,7 @@ int read_fieldize_hdf5(GENFLOAT * field, const char *ffname, int type, double bo
   double mass[N_TYPE];
   FLOAT_TYPE *pos=NULL;
   FLOAT_TYPE *masses=NULL;
+  int ret = 0;
   char name[16];
   double Omega0;
   hid_t hdf_group,hdf_file;
@@ -308,8 +309,10 @@ int read_fieldize_hdf5(GENFLOAT * field, const char *ffname, int type, double bo
 
   /* Read position and velocity*/
   length = get_triple_dataset("Coordinates",pos,npart[type],&hdf_group,fileno);
-  if(length == 0)
+  if(length == 0) {
+          ret = -1;
           goto exit;
+  }
   /* Load particle masses, if present  */
    if(mass[type] == 0){
        double total_mass_this_file=0;
@@ -317,8 +320,10 @@ int read_fieldize_hdf5(GENFLOAT * field, const char *ffname, int type, double bo
           fprintf(stderr,"Error allocating particle memory of %ld MB for type %d\n",npart[type]*sizeof(FLOAT_TYPE)/1024/1024,type);
           return -1;
         }
-        if (length != get_single_dataset("Masses",masses,length,&hdf_group,fileno))
-             goto exit;
+        if (length != get_single_dataset("Masses",masses,length,&hdf_group,fileno)) {
+            ret = -1;
+            goto exit;
+        }
         for(int i = 0; i<npart[type]; i++)
             total_mass_this_file += masses[i];
         *total_mass += total_mass_this_file;
@@ -330,7 +335,7 @@ exit:
   H5Gclose(hdf_group);
   H5Fclose(hdf_file);
   free(pos);
-  return 0;
+  return ret;
 }
 #endif //HDF5
 

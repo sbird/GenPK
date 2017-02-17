@@ -202,7 +202,9 @@ int main(int argc, char* argv[])
           double total_mass = 0;
           if (use_hdf5){
               for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
-                  read_fieldize_hdf5(field, fnames[fileno].c_str(), type, box, field_dims, &total_mass, fileno);
+                  /*If we couldn't read the coordinate array for some reason, go on to the next type*/
+                  if(read_fieldize_hdf5(field, fnames[fileno].c_str(), type, box, field_dims, &total_mass, fileno) < 0)
+                      continue;
               if(type == 0 && stars_are_baryons) {
                 for(unsigned fileno = 0; fileno < fnames.size(); ++fileno)
                   read_fieldize_hdf5(field, fnames[fileno].c_str(), STARS_TYPE, box, field_dims, &total_mass, fileno);
