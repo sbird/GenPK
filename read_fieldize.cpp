@@ -158,7 +158,7 @@ std::vector<std::string> find_hdf_set(const std::string& infname)
         std::string ffname;
         std::ostringstream convert;
         convert<<fileno;
-        ffname = fname.replace(i_fileno, 1 + (fileno > 10), convert.str());
+        ffname = fname.replace(i_fileno, 1 + (fileno > 10) + (fileno > 100), convert.str());
         /*If we ran out of files, we're done*/
         if(!(file_readable(ffname.c_str()) && H5Fis_hdf5(ffname.c_str()) > 0))
                 break;
