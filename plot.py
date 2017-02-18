@@ -26,3 +26,8 @@ def plot_genpk_power(matpow1, box,color=None, ls="-"):
     plt.title("Power spectrum")
     plt.loglog(k, Pk1, linestyle=ls, color=color)
 
+def get_camb_power(matpow):
+    """Plot the power spectrum from CAMB
+    (or anything else where no changes are needed)"""
+    data = np.loadtxt(matpow)
+    return (data[:,0], data[:,1])
