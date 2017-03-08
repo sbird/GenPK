@@ -79,7 +79,7 @@ int read_fieldize_bigfile(GENFLOAT * field, const char *fname, int type, double 
   }
   big_block_close(&bb);
 
-  float * positions = (float *) malloc(3*npart_all[type]*sizeof(float));
+  FLOAT_TYPE * positions = (FLOAT_TYPE *) malloc(3*npart_all[type]*sizeof(float));
   for(int i=0; i<3*npart_all[type]; i++)
       positions[i] = ((double *)pos.data)[i];
   free(pos.data);
@@ -108,7 +108,7 @@ int read_fieldize_bigfile(GENFLOAT * field, const char *fname, int type, double 
   }
   //Do the final summation here to avoid fp roundoff
   *total_mass += mass[type]*npart_all[type];
-  fieldize(box,field_dims,field,npart_all[type],positions, (float *)massarray.data, mass[type], 1);
+  fieldize(box,field_dims,field,npart_all[type],positions, (FLOAT_TYPE *)massarray.data, mass[type], 1);
   free(positions);
   free(massarray.data);
   return 0;
