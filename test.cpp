@@ -32,10 +32,10 @@ BOOST_AUTO_TEST_CASE(check_fieldize)
 {
         const int dims=5;
         GENFLOAT field[2*dims*dims*(dims/2+1)]={0};
-        FLOAT_TYPE pos[30];
+        GENPK_FLOAT_TYPE pos[30];
         for(int i=0; i<30; i++)
                 pos[i]=i/3.;
-        FLOAT_TYPE masses[30];
+        GENPK_FLOAT_TYPE masses[30];
         for(int i=0; i<30; i++)
                 masses[i]=10.;
         fieldize(10, dims,field,10,pos,masses,10., 1);

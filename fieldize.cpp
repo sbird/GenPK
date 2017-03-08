@@ -43,7 +43,7 @@
  * is about to be handed to an FFTW in-place routine, 
  * and skip the last 2 places of each row in the last dimension (of out)
  */
-int fieldize(double boxsize, int dims, GENFLOAT *out, int64_t segment_particles, FLOAT_TYPE *positions, FLOAT_TYPE * masses, double mass, int extra)
+int fieldize(double boxsize, int dims, GENFLOAT *out, int64_t segment_particles, GENPK_FLOAT_TYPE *positions, GENPK_FLOAT_TYPE * masses, double mass, int extra)
 {
     const size_t fdims=2*(dims/2+extra);
     /*If extra is on, we want to leave space for FFTW

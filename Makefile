@@ -4,7 +4,7 @@ GREAD=${CURDIR}/GadgetReader
 
 #If Gadget was compiled with double precision output, you should define this flag
 #to read it correctly
-#OPT = -DDOUBLE_PRECISION
+#OPT = -DDOUBLE_PRECISION_SNAP
 
 #Check for a pkgconfig; if one exists we are probably debian.
 ifeq ($(shell pkg-config --exists hdf5-serial && echo 1),1)

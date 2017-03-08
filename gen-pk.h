@@ -22,10 +22,10 @@
 #include <string>
 
 //This is the type for reading particles
-#ifdef DOUBLE_PRECISION
-    #define FLOAT_TYPE double
+#ifdef DOUBLE_PRECISION_SNAP
+    #define GENPK_FLOAT_TYPE double
 #else
-    #define FLOAT_TYPE float
+    #define GENPK_FLOAT_TYPE float
 #endif
 //This is the type for internal computations
 #define GENFLOAT double
@@ -90,7 +90,7 @@ std::vector<std::string> find_hdf_set(const std::string& infname);
  * @param mass Particle mass if constant for all of this type.
  * @param extra If this is 1, assume that the output is about to be handed to an FFTW in-place routine, 
  * and make it skip the last 2 places of the each row in the last dimension */
-int fieldize(double boxsize, int dims, GENFLOAT *out, int64_t segment_particles, FLOAT_TYPE *positions, FLOAT_TYPE * masses, double mass, int extra);
+int fieldize(double boxsize, int dims, GENFLOAT *out, int64_t segment_particles, GENPK_FLOAT_TYPE *positions, GENPK_FLOAT_TYPE * masses, double mass, int extra);
 
 #ifdef __cplusplus
 extern "C" {
