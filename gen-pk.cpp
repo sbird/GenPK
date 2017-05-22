@@ -53,6 +53,8 @@
 //For omp_get_num_procs
 #ifdef _OPENMP
 #include <omp.h>
+#else
+#warning "You are compiling with OpenMP disabled (probably Apple clang). This will be slow! Try installing gcc."
 #endif
 #include <stdlib.h>
 
