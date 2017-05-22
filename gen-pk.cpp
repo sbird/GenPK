@@ -51,7 +51,9 @@
 //For getopt
 #include <unistd.h>
 //For omp_get_num_procs
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 #include <stdlib.h>
 
 /** Maximal size of FFT grid.
@@ -182,7 +184,9 @@ int main(int argc, char* argv[])
   		  fprintf(stderr,"Error initialising fftw threads\n");
   		  return 0;
   }
-  fftw_plan_with_nthreads(omp_get_num_procs());
+#ifdef _OPENMP
+  fftw_plan_with_nthreads(omp_get_max_threads());
+#endif
   pl=fftw_plan_dft_r2c_3d(field_dims,field_dims,field_dims,&field[0],outfield, FFTW_ESTIMATE);
   //Allocate memory for output
   power=(double *) malloc(nrbins*sizeof(double));
