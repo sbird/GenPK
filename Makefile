@@ -14,15 +14,28 @@ else
 	HDF_LINK = -lhdf5 -lhdf5_hl
 endif
 
-LFLAGS += -lfftw3_threads -lfftw3 -lpthread -lrgad -L${GREAD} -Wl,-rpath,$(GREAD),--no-add-needed,--as-needed $(HDF_LINK) -Lbigfile/src -lbigfile
+LFLAGS += -lfftw3_threads -lfftw3 -lpthread -lrgad -L${GREAD} -Wl,-rpath,$(GREAD) $(HDF_LINK) -Lbigfile/src -lbigfile
+
+#Mac's ld doesn't support --no-add-needed, so check for it.
+#We are looking for the response: ld unknown option: --no-add-needed
+LDCHECK:=$(shell ld --as-needed 2>&1)
+ifneq (unknown,$(findstring unknown,${LDCHECK}))
+  LFLAGS +=-Wl,--no-add-needed,--as-needed
+endif
 #Are we using gcc or icc?
 ifeq (icc,$(findstring icc,${CC}))
   CFLAGS +=-O2 -g -c -w1 -openmp $(OPT) -I${GREAD}
   LINK +=${CXX} -openmp
 else
-  CFLAGS +=-O2 -ffast-math -g -c -Wall -fopenmp $(OPT) -I${GREAD} $(HDF_INC)
-  LINK +=${CXX} -openmp $(PRO)
-  LFLAGS += -lm -lgomp 
+  CFLAGS +=-O2 -ffast-math -g -c -Wall $(OPT) -I${GREAD} $(HDF_INC)
+  LINK +=${CXX} $(PRO)
+  LFLAGS += -lm
+GCCV:=$(shell gcc --version )
+ifneq (darwin,$(findstring darwin,${GCCV}))
+  LFLAGS += -lgomp
+  LINK += -fopenmp
+  CFLAGS += -fopenmp
+endif
 endif
 PRO=#-pg
 #gcc
