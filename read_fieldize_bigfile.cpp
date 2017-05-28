@@ -9,6 +9,12 @@ int is_bigfile(const char * infile)
   BigFile bf = {0};
   if(0 != big_file_open(&bf, infile))
       return 0;
+  BigBlock bh = {0};
+  if(0 != big_file_open_block(&bf, &bh, "Header")) {
+      big_file_close(&bf);
+      return 0;
+  }
+  big_block_close(&bh);
   big_file_close(&bf);
   return 1;
 }
