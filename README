@@ -41,3 +41,5 @@ The total conversion factors are then
 k *= 2\pi / Boxsize
 P(k) *= Boxsize ^3
 
+If you use this software in a paper, you can cite it via the ASCL:
+http://ascl.net/1706.006
