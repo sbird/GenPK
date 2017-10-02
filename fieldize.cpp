@@ -54,8 +54,8 @@ int fieldize(double boxsize, int dims, GENFLOAT *out, int64_t segment_particles,
     for(int64_t index=0;index<segment_particles;index+=IL) {
         GENFLOAT temp[IL][8];
         size_t temp2[IL][8];
-        const int il=(index+IL<segment_particles ? IL : segment_particles-index);
-        for(int k=0; k<il; k++)
+        const int64_t il=(index+IL<segment_particles ? IL : segment_particles-index);
+        for(int64_t k=0; k<il; k++)
         {
             GENFLOAT dx[3],tx[3], x[3];
             int fx[3],nex[3];
@@ -97,7 +97,7 @@ int fieldize(double boxsize, int dims, GENFLOAT *out, int64_t segment_particles,
         *to ensure synchronisation.*/
         #pragma omp critical
         {
-          for(int k=0; k<il; k++)
+          for(int64_t k=0; k<il; k++)
           {
             out[temp2[k][0]]+=temp[k][0];
             out[temp2[k][1]]+=temp[k][1];
