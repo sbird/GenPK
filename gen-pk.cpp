@@ -60,7 +60,7 @@
 
 /** Maximal size of FFT grid.
  * In practice 1024 means we need just over 4GB, as sizeof(float)=4*/
-#define FIELD_DIMS 1024
+#define FIELD_DIMS 3072L
 
 using namespace GadgetReader;
 using namespace std;
@@ -74,7 +74,8 @@ using namespace std;
  * to a file, and then frees the memory*/
 int main(int argc, char* argv[])
 {
-  int field_dims=0,type;
+  int64_t field_dims=0;
+  int type;
   GENFLOAT *field;
   double *power, *keffs;
   int *count;
@@ -166,13 +167,13 @@ int main(int argc, char* argv[])
   }
   //Work out how large a field we need
   for(type=0;type<N_TYPE;type++){
-    int tmp=2*nexttwo(cbrt(npart_total[type]));
+    int64_t tmp=2*nexttwo(cbrt(npart_total[type]));
     field_dims=std::max(field_dims, std::min(tmp, FIELD_DIMS));
   }
   const int nrbins=field_dims;
   //Memory for the field
   printf("FFT grid dimension: %u\n",field_dims);
-  const size_t field_size = 2*field_dims*field_dims*(field_dims/2+1);
+  const size_t field_size = 2*field_dims*(size_t) field_dims*(field_dims/2+1);
   /* Allocating a bit more memory allows us to do in-place transforms.*/
   if(!(field=(GENFLOAT *)fftw_malloc(field_size*sizeof(GENFLOAT)))){
   	fprintf(stderr,"Error allocating memory for field\n");
