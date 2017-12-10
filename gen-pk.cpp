@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
   }
   const int nrbins=field_dims;
   //Memory for the field
-  printf("FFT grid dimension: %u\n",field_dims);
+  printf("FFT grid dimension: %lu\n",field_dims);
   const size_t field_size = 2*field_dims*(size_t) field_dims*(field_dims/2+1);
   /* Allocating a bit more memory allows us to do in-place transforms.*/
   if(!(field=(GENFLOAT *)fftw_malloc(field_size*sizeof(GENFLOAT)))){
