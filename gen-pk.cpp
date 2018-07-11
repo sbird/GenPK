@@ -231,8 +231,10 @@ int main(int argc, char* argv[])
           }
           printf("total_mass in type %d = %g\n", type, total_mass);
           fftw_execute(pl);
+          fprintf(stderr, "Done FFT: %p %p %p %p\n", outfield, power, count, keffs);
           if(powerspectrum(field_dims,outfield, outfield, nrbins, power,count,keffs, total_mass, total_mass))
                   continue;
+          fprintf(stderr, "Done power spectrum\n");
           filename=outdir;
           filename+="/PK-"+type_str(type)+"-"+infiles.substr(last+1);
           print_pk(filename,nrbins,keffs,power,count);
