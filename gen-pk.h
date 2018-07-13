@@ -101,7 +101,7 @@ extern "C" {
  * @param ky k_y
  * @param kz k_z
  * @param n Total size of grid */
-GENFLOAT invwindow(int kx, int ky, int kz, int n);
+GENFLOAT invwindow(int64_t kx, int64_t ky, int64_t kz, int64_t n);
 /** Wrapper around FFTW to calculate the 3D power spectrum from a 3D field.
  * Returns 0.
  * @param dims Size of grid to FFT.
@@ -116,7 +116,7 @@ GENFLOAT invwindow(int kx, int ky, int kz, int n);
  * @param power Pointer to memory to output powerspectrum to. Needs to store nrbins values.
  * @param count Ditto for modes per bin
  * @param keffs Ditto for effective k.*/
-int powerspectrum(int dims, fftw_complex* outfield, fftw_complex* outfield2, int nrbins, double *power, int *count, double *keffs, double total_mass, double total_mass2);
+int powerspectrum(int64_t dims, fftw_complex* outfield, fftw_complex* outfield2, int nrbins, double *power, int *count, double *keffs, double total_mass, double total_mass2);
 
 int is_bigfile(const char * infile);
 int load_bigfile_header(const char *fname, double  *atime, double *redshift, double *box100, double *h100, int64_t *npart_all, double * mass, double *Omega0);

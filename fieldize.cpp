@@ -114,7 +114,7 @@ int fieldize(double boxsize, int dims, GENFLOAT *out, int64_t segment_particles,
 }
 
 //Helper function for 1D window function.
-inline GENFLOAT onedinvwindow(int kx, int n)
+inline GENFLOAT onedinvwindow(int64_t kx, int64_t n)
 {
     //Return \pi x /(n sin(\pi x n)) unless x = 0, in which case return 1.
     return kx ? M_PI*kx/(n*sin(M_PI*kx/(float)n)) : 1.0;
@@ -122,7 +122,7 @@ inline GENFLOAT onedinvwindow(int kx, int n)
 
 //The window function of the CiC procedure above. Need to deconvolve this for the power spectrum.
 //Only has an effect for k > Nyquist/4.
-GENFLOAT invwindow(int kx, int ky, int kz, int n)
+GENFLOAT invwindow(int64_t kx, int64_t ky, int64_t kz, int64_t n)
 {
     if(n == 0)
         return 0;
