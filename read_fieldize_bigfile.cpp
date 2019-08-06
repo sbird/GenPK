@@ -86,6 +86,10 @@ int read_fieldize_bigfile(GENFLOAT * field, const char *fname, int type, double 
   big_block_close(&bb);
 
   GENPK_FLOAT_TYPE * positions = (GENPK_FLOAT_TYPE *) malloc(3*npart_all[type]*sizeof(GENPK_FLOAT_TYPE));
+  if(!positions) {
+      fprintf(stderr, "Could not allocate particle memory\n");
+      return 1;
+  }
   for(int i=0; i<3*npart_all[type]; i++)
       positions[i] = ((double *)pos.data)[i];
   free(pos.data);
